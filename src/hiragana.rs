@@ -376,9 +376,11 @@ pub const HIRAGANA_SYLLABLES: &[(Consonant, &[(char, Vowel)])] = &[
         Consonant::Y,
         &[
             ('や', Vowel::A),
+            ('ゃ', Vowel::A),
             ('よ', Vowel::O),
             ('ょ', Vowel::O),
             ('ゆ', Vowel::U),
+            ('ゅ', Vowel::U),
         ],
     ),
     (Consonant::W, &[('わ', Vowel::A), ('を', Vowel::O)]),
