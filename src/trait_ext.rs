@@ -471,4 +471,15 @@ mod tests {
     fn test_alphabet_eq(inp: &str, a: Alphabet) {
         assert_eq!(inp.get_alphabet(), a)
     }
+
+    #[test_case("よ", false)]
+    #[test_case("ょ", true)]
+    #[test_case("ゃ", true)]
+    #[test_case("ゅ", true)]
+    #[test_case("ョ", true)]
+    #[test_case("ャ", true)]
+    #[test_case("ュ", true)]
+    fn test_small_kana(inp: &str, is_small: bool) {
+        assert!(inp.is_small_kana() == is_small);
+    }
 }
