@@ -1,6 +1,9 @@
 #[cfg(feature = "hiragana")]
 pub mod hiragana;
 
+#[cfg(feature = "furigana")]
+pub mod furigana;
+
 pub mod alphabet;
 pub mod constants;
 pub mod counter;
