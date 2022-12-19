@@ -81,6 +81,9 @@ pub trait JapaneseExt {
 
     /// Convert normal ASCII into Wide-alphanumeric [ A -> Ａ]
     fn to_fullwidth(&self) -> String;
+
+    /// Returns the real length of the string. This is the amount of characters
+    fn real_len(&self) -> usize;
 }
 
 impl JapaneseExt for char {
@@ -258,6 +261,11 @@ impl JapaneseExt for char {
     fn to_fullwidth(&self) -> String {
         map_char(*self, NORMAL_ALPHANUMERIC, |x| x + 0xfee0).to_string()
     }
+
+    #[inline]
+    fn real_len(&self) -> usize {
+        1
+    }
 }
 
 impl JapaneseExt for str {
@@ -407,6 +415,11 @@ impl JapaneseExt for str {
     #[inline]
     fn to_fullwidth(&self) -> String {
         shift_unicode(self, NORMAL_ALPHANUMERIC, |x| x + 0xfee0)
+    }
+
+    #[inline]
+    fn real_len(&self) -> usize {
+        self.chars().count()
     }
 }
 
