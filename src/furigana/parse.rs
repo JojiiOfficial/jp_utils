@@ -15,6 +15,12 @@ pub fn full(input: &str) -> Result<Vec<ReadingPartRef>, ()> {
     from_str(input).collect::<Result<Vec<_>, _>>()
 }
 
+/// Similar to `full` but ignores parts that contain errors
+#[inline]
+pub fn unchecked(input: &str) -> Vec<ReadingPartRef> {
+    from_str(input).filter_map(|i| i.ok()).collect()
+}
+
 /// Iterator over encoded furigana which returns ReadingPartRef's of all parts
 /// Encoded furigana: `[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]`
 pub struct FuriParseIter<'a> {
