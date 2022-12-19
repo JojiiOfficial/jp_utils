@@ -131,6 +131,30 @@ impl<'a> AsPart for ReadingPartRef<'a> {
             ReadingPartRef::Kanji { kanji: _, readings } => Some(readings),
         }
     }
+
+    /// Sets the kanji reading or converts it to one
+    fn set_kanji(&mut self, s: Self::StrType) {
+        match self {
+            ReadingPartRef::Kana(k) => {
+                *self = Self::new_kanji(s, *k);
+            }
+            ReadingPartRef::Kanji { kanji, readings: _ } => *kanji = s,
+        }
+    }
+
+    #[inline]
+    fn set_kana(&mut self, s: Self::StrType) {
+        if let ReadingPartRef::Kana(k) = self {
+            *k = s
+        }
+    }
+
+    #[inline]
+    fn add_reading(&mut self, r: Self::StrType) {
+        if let ReadingPartRef::Kanji { kanji: _, readings } = self {
+            readings.push(r);
+        }
+    }
 }
 
 impl<'a> From<&'a ReadingPart> for ReadingPartRef<'a> {

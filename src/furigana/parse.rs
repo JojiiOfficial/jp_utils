@@ -99,7 +99,6 @@ mod test {
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|も|ん|だい]"; "other")]
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ]]は[問題|も|ん|だい]"; "other2")]
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ|e]は[問題|もん|だい]")]
-    #[test_case("[拝|い]|は[問題|もん|だい]")]
     fn test_parse_furigana_error(furi: &str) {
         let parsed = from_str(furi).collect::<Result<Vec<_>, _>>();
         assert_eq!(parsed, Err(()));

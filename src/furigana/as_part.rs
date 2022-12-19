@@ -32,6 +32,15 @@ pub trait AsPart {
         Some(kanji.chars().count() == readings.len())
     }
 
+    /// Sets the kanji. Converts a Kana reading to a kanji reading
+    fn set_kanji(&mut self, s: Self::StrType);
+
+    /// Sets the kana text to `s`. Does nothing on a kanji reading
+    fn set_kana(&mut self, s: Self::StrType);
+
+    /// Adds a new reading to a kanji reading. Does nothing on a kana reading
+    fn add_reading(&mut self, r: Self::StrType);
+
     /// Encodes the part into a string
     fn encode(&self) -> Option<String> {
         if self.is_empty() {

@@ -95,6 +95,31 @@ impl AsPart for ReadingPart {
             ReadingPart::Kanji { kanji: _, readings } => Some(readings),
         }
     }
+
+    /// Sets the kanji reading or converts it to one
+    fn set_kanji(&mut self, new_kanji: String) {
+        match self {
+            ReadingPart::Kana(k) => {
+                let kana = std::mem::take(k);
+                *self = Self::new_kanji(new_kanji, kana);
+            }
+            ReadingPart::Kanji { kanji, readings: _ } => *kanji = new_kanji,
+        }
+    }
+
+    #[inline]
+    fn set_kana(&mut self, s: String) {
+        if let ReadingPart::Kana(k) = self {
+            *k = s
+        }
+    }
+
+    #[inline]
+    fn add_reading(&mut self, r: String) {
+        if let ReadingPart::Kanji { kanji: _, readings } = self {
+            readings.push(r);
+        }
+    }
 }
 
 impl From<String> for ReadingPart {
