@@ -155,6 +155,14 @@ impl<'a> AsPart for ReadingPartRef<'a> {
             readings.push(r);
         }
     }
+
+    #[inline]
+    fn get_kana_reading(&self) -> String {
+        match self {
+            ReadingPartRef::Kana(k) => k.to_string(),
+            ReadingPartRef::Kanji { kanji: _, readings } => readings.join(""),
+        }
+    }
 }
 
 impl<'a> From<&'a ReadingPart> for ReadingPartRef<'a> {

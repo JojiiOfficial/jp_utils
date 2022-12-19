@@ -18,6 +18,10 @@ pub trait AsPart {
     /// Returns the kana reading
     fn get_kana<'a>(&'a self) -> Option<&'a Self::StrType>;
 
+    /// Returns the kana reading of the reading part. This is equal to .get_kana() for kana reading
+    /// parts and equal to all kanji readings merged to one
+    fn get_kana_reading(&self) -> String;
+
     /// Returns the kanji reading if exists
     fn get_kanji<'a>(&'a self) -> Option<&'a Self::StrType>;
 
