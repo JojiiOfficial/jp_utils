@@ -45,11 +45,11 @@ impl<'a> ReadingPartRef<'a> {
     }
 
     /// Parses a ReadingPart from string
-    pub fn from_str(str: &'a str) -> ReadingPartRef {
+    pub fn from_str(str: &'a str) -> Result<ReadingPartRef, ()> {
         if str.starts_with('[') && str.ends_with(']') {
-            Self::parse_kanji_str(str).unwrap()
+            Self::parse_kanji_str(str).ok_or(())
         } else {
-            ReadingPartRef::Kana(str)
+            Ok(ReadingPartRef::Kana(str))
         }
     }
 

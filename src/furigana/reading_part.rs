@@ -38,9 +38,9 @@ impl ReadingPart {
 
     /// Parses a ReadingPart from string
     #[inline]
-    pub fn from_str(s: &str) -> ReadingPart {
+    pub fn from_str(s: &str) -> Result<ReadingPart, ()> {
         // TODO: find a better way to do this
-        ReadingPartRef::from_str(s).to_owned()
+        Ok(ReadingPartRef::from_str(s)?.to_owned())
     }
 }
 
