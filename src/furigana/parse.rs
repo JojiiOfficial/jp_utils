@@ -42,7 +42,9 @@ impl<'a> FuriParseIter<'a> {
 
         loop {
             let Some((_, nchar)) = self.char_iter.peek().copied() else {
-                return Ok(last);
+                // We reached the end since we can't peek to the next character. This means we want
+                // the substring include all chars until the end of the string
+                return Ok(Some(self.inp.len()));
             };
 
             // We don't want to advance on '[' since this is needed for the next call
@@ -93,6 +95,7 @@ mod test {
 
     #[test_case("[音楽|おん|がく]が[好|す]き")]
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]")]
+    #[test_case("[楽|たの]しい")]
     fn test_parse_furigana(furi: &str) {
         let parsed = from_str(furi).collect::<Result<Vec<_>, _>>().unwrap();
         let encoded = encode::sequence(&parsed);
@@ -105,6 +108,7 @@ mod test {
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|も|ん|だい]"; "other")]
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ]]は[問題|も|ん|だい]"; "other2")]
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ|e]は[問題|もん|だい]")]
+    #[test_case("[拝金主義|はい|]")]
     fn test_parse_furigana_error(furi: &str) {
         let parsed = from_str(furi).collect::<Result<Vec<_>, _>>();
         assert_eq!(parsed, Err(()));
