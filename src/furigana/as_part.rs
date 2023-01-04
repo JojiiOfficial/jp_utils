@@ -16,14 +16,14 @@ pub trait AsPart {
     fn is_kanji(&self) -> bool;
 
     /// Returns the kana reading
-    fn get_kana<'a>(&'a self) -> Option<&'a Self::StrType>;
+    fn as_kana<'a>(&'a self) -> Option<&'a Self::StrType>;
+
+    /// Returns the kanji reading if exists
+    fn as_kanji<'a>(&'a self) -> Option<&'a Self::StrType>;
 
     /// Returns the kana reading of the reading part. This is equal to .get_kana() for kana reading
     /// parts and equal to all kanji readings merged to one
-    fn get_kana_reading(&self) -> String;
-
-    /// Returns the kanji reading if exists
-    fn get_kanji<'a>(&'a self) -> Option<&'a Self::StrType>;
+    fn kana_reading(&self) -> String;
 
     /// Returns the kanji readings
     fn readings(&self) -> Option<&Vec<Self::StrType>>;
@@ -31,7 +31,7 @@ pub trait AsPart {
     /// Returns `Some(true)` if each kanji has its own reading assigned. Returns `None` if reading
     /// is not a kanji reading
     fn detailed_readings(&self) -> Option<bool> {
-        let kanji = self.get_kanji()?.as_ref();
+        let kanji = self.as_kanji()?.as_ref();
         let readings = self.readings()?;
         Some(kanji.chars().count() == readings.len())
     }
@@ -51,7 +51,7 @@ pub trait AsPart {
             return None;
         }
 
-        if let Some(kanji) = self.get_kanji() {
+        if let Some(kanji) = self.as_kanji() {
             let kanji = kanji.as_ref();
             let readings = self.readings().unwrap();
 
@@ -61,7 +61,7 @@ pub trait AsPart {
                 let readings_combined = readings.iter().map(|i| i.as_ref()).join("");
                 Some(encode::single_block(kanji, readings_combined))
             }
-        } else if let Some(kana) = self.get_kana() {
+        } else if let Some(kana) = self.as_kana() {
             Some(kana.as_ref().to_string())
         } else {
             // A part is always either a kanji or a kana part

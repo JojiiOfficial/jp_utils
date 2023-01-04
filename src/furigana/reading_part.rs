@@ -71,7 +71,7 @@ impl AsPart for ReadingPart {
 
     /// Returns the kana reading
     #[inline]
-    fn get_kana<'a>(&'a self) -> Option<&'a String> {
+    fn as_kana<'a>(&'a self) -> Option<&'a String> {
         match self {
             ReadingPart::Kana(k) => Some(k),
             ReadingPart::Kanji { .. } => None,
@@ -79,7 +79,7 @@ impl AsPart for ReadingPart {
     }
 
     #[inline]
-    fn get_kana_reading(&self) -> String {
+    fn kana_reading(&self) -> String {
         match self {
             ReadingPart::Kana(k) => k.to_string(),
             ReadingPart::Kanji { kanji: _, readings } => readings.join(""),
@@ -88,7 +88,7 @@ impl AsPart for ReadingPart {
 
     /// Returns the kanji reading if exists
     #[inline]
-    fn get_kanji<'a>(&'a self) -> Option<&'a String> {
+    fn as_kanji<'a>(&'a self) -> Option<&'a String> {
         match self {
             ReadingPart::Kana(_) => None,
             ReadingPart::Kanji { kanji, readings: _ } => Some(kanji),
