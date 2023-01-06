@@ -25,6 +25,7 @@ pub fn unchecked(input: &str) -> Vec<ReadingPartRef> {
 /// Encoded furigana: `[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]`
 pub struct FuriParseIter<'a> {
     inp: &'a str,
+    checked: bool,
     char_iter: Peekable<CharIndices<'a>>,
 }
 
@@ -33,7 +34,17 @@ impl<'a> FuriParseIter<'a> {
     #[inline]
     pub fn new(inp: &'a str) -> Self {
         let char_iter = inp.char_indices().peekable();
-        Self { inp, char_iter }
+        Self {
+            inp,
+            char_iter,
+            checked: true,
+        }
+    }
+
+    /// Don't checke content just parse
+    pub fn unchecked(mut self) -> Self {
+        self.checked = false;
+        self
     }
 
     /// Finds the last position of the item that is currently being parsed
@@ -81,12 +92,19 @@ impl<'a> Iterator for FuriParseIter<'a> {
         };
 
         let furi_part = &self.inp[nidx..end];
-        Some(ReadingPartRef::from_str(furi_part))
+        if self.checked {
+            Some(ReadingPartRef::from_str_checked(furi_part))
+        } else {
+            Some(Ok(ReadingPartRef::from_str(furi_part)))
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
+
     use super::super::encode;
     use super::*;
     use test_case::test_case;
@@ -96,7 +114,10 @@ mod test {
     #[test_case("[楽|たの]しい")]
     #[test_case("この[人|ひと]が[嫌|きら]いです。")]
     fn test_parse_furigana(furi: &str) {
-        let parsed = from_str(furi).collect::<Result<Vec<_>, _>>().unwrap();
+        let parsed = from_str(furi)
+            .unchecked()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
         let encoded = encode::sequence(&parsed);
         assert_eq!(furi, encoded);
     }
@@ -111,5 +132,21 @@ mod test {
     fn test_parse_furigana_error(furi: &str) {
         let parsed = from_str(furi).collect::<Result<Vec<_>, _>>();
         assert_eq!(parsed, Err(()));
+    }
+
+    #[test]
+    fn test_all_sentences() {
+        let data = File::open("./furigana.csv").unwrap();
+        let reader = BufReader::new(data);
+        for line in reader.lines() {
+            let line = line.unwrap();
+            let parsed = from_str(&line).collect::<Result<Vec<_>, _>>();
+            if let Err(err) = parsed {
+                println!("Error: {err:?} at line {:?}", line);
+                continue;
+            }
+            let encoded = encode::sequence(&parsed.unwrap());
+            assert_eq!(line, encoded);
+        }
     }
 }

@@ -45,18 +45,27 @@ impl<'a> ReadingPartRef<'a> {
     }
 
     /// Parses a ReadingPart from string
-    pub fn from_str(str: &'a str) -> Result<ReadingPartRef, ()> {
+    pub fn from_str_checked(str: &'a str) -> Result<ReadingPartRef, ()> {
         if str.starts_with('[') && str.ends_with(']') {
-            Self::parse_kanji_str(str).ok_or(())
+            Self::parse_kanji_str(str, true).ok_or(())
         } else {
             Ok(ReadingPartRef::Kana(str))
+        }
+    }
+
+    /// Parses a ReadingPart from string
+    pub fn from_str(str: &'a str) -> ReadingPartRef {
+        if str.starts_with('[') && str.ends_with(']') {
+            Self::parse_kanji_str(str, false).unwrap()
+        } else {
+            ReadingPartRef::Kana(str)
         }
     }
 
     /// Parses an encoded Kanji furigana string eg: `[音楽|おん|がく]` thus `s` has to start with
     /// `[` and end  with `]`. If the readings don't line up with the kanji literal count and has
     /// are more than 1 (fallback) the function returns None.
-    fn parse_kanji_str(s: &'a str) -> Option<ReadingPartRef> {
+    fn parse_kanji_str(s: &'a str, checked: bool) -> Option<ReadingPartRef> {
         // Strip [ and ] and split at the |
         let mut split = (&s[1..s.len() - 1]).split('|');
 
@@ -64,14 +73,14 @@ impl<'a> ReadingPartRef<'a> {
         let kanji = split.next()?;
 
         let readings = split.collect::<Vec<_>>();
-        if readings.is_empty() {
+        if readings.is_empty() && checked {
             return None;
         }
 
         if readings.len() == 1 {
             // Fallback where all kanji get the first reading assigned
             return Some(ReadingPartRef::new_kanji(readings[0], kanji));
-        } else if kanji.chars().count() != readings.len() {
+        } else if kanji.chars().count() != readings.len() && checked {
             // Malformed kanji string
             return None;
         }

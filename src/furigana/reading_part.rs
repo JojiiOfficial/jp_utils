@@ -38,9 +38,16 @@ impl ReadingPart {
 
     /// Parses a ReadingPart from string
     #[inline]
-    pub fn from_str(s: &str) -> Result<ReadingPart, ()> {
+    pub fn from_str(s: &str) -> ReadingPart {
         // TODO: find a better way to do this
-        Ok(ReadingPartRef::from_str(s)?.to_owned())
+        ReadingPartRef::from_str(s).to_owned()
+    }
+
+    /// Parses a ReadingPart from string
+    #[inline]
+    pub fn from_str_checked(s: &str) -> Result<ReadingPart, ()> {
+        // TODO: find a better way to do this
+        Ok(ReadingPartRef::from_str_checked(s)?.to_owned())
     }
 }
 
