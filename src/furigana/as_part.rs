@@ -1,4 +1,4 @@
-use super::encode;
+use super::{encode, reading_iter::ReadingIter};
 use itertools::Itertools;
 
 /// Trait defining common behavior for ReadingParts
@@ -67,6 +67,15 @@ pub trait AsPart {
             // A part is always either a kanji or a kana part
             unreachable!()
         }
+    }
+
+    /// Returns an iterator over all readings of the part
+    #[inline]
+    fn reading_iter(&self) -> ReadingIter<Self>
+    where
+        Self: Sized,
+    {
+        ReadingIter::new(self)
     }
 }
 
