@@ -37,34 +37,32 @@ impl<'a> FuriParseIter<'a> {
     }
 
     /// Finds the last position of the item that is currently being parsed
-    fn advance_chars(&mut self, is_kanji_block: bool) -> Result<Option<usize>, ()> {
-        let mut last = self.char_iter.peek().map(|i| i.0);
-
+    fn advance_chars(&mut self, is_kanji_block: bool) -> Result<usize, ()> {
         loop {
-            let Some((_, nchar)) = self.char_iter.peek().copied() else {
+            let Some((curr_pos, peek_char)) = self.char_iter.peek().copied() else {
                 // We reached the end since we can't peek to the next character. This means we want
                 // the substring include all chars until the end of the string
-                return Ok(Some(self.inp.len()));
+                return Ok(self.inp.len());
             };
 
             // We don't want to advance on '[' since this is needed for the next call
-            if nchar == '[' {
+            if peek_char == '[' {
                 if is_kanji_block {
                     return Err(());
                 }
 
-                return Ok(last);
+                return Ok(curr_pos);
             }
 
-            last = self.char_iter.next().map(|i| i.0);
+            let last = self.char_iter.next().map(|i| i.0);
 
-            if nchar == ']' {
+            if peek_char == ']' {
                 if !is_kanji_block {
                     return Err(());
                 }
 
                 // Include ']' in returned position
-                return Ok(last.map(|i| i + 1));
+                return Ok(last.unwrap() + 1);
             }
         }
     }
@@ -76,11 +74,11 @@ impl<'a> Iterator for FuriParseIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let (nidx, nchar) = self.char_iter.next()?;
         let is_kanji_block = nchar == '[';
+
         let end = match self.advance_chars(is_kanji_block) {
             Ok(o) => o,
             Err(e) => return Some(Err(e)),
-        }
-        .unwrap_or_else(|| self.inp.len());
+        };
 
         let furi_part = &self.inp[nidx..end];
         Some(ReadingPartRef::from_str(furi_part))
@@ -96,6 +94,7 @@ mod test {
     #[test_case("[音楽|おん|がく]が[好|す]き")]
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]")]
     #[test_case("[楽|たの]しい")]
+    #[test_case("この[人|ひと]が[嫌|きら]いです。")]
     fn test_parse_furigana(furi: &str) {
         let parsed = from_str(furi).collect::<Result<Vec<_>, _>>().unwrap();
         let encoded = encode::sequence(&parsed);
