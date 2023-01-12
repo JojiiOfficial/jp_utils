@@ -89,6 +89,13 @@ impl<'a> ReadingPartRef<'a> {
     }
 }
 
+impl<'a> ToString for ReadingPartRef<'a> {
+    #[inline]
+    fn to_string(&self) -> String {
+        self.encode().unwrap_or_default()
+    }
+}
+
 impl<'a> AsPart for ReadingPartRef<'a> {
     type StrType = &'a str;
 

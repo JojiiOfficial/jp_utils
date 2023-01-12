@@ -1,4 +1,5 @@
 use super::{as_part::AsPart, reading_part_ref::ReadingPartRef};
+use std::str::FromStr;
 
 /// Represents a single part of a reading that can either be a kana only reading or a kanji reading
 /// with a kana part that describes the kanjis reading
@@ -38,16 +39,26 @@ impl ReadingPart {
 
     /// Parses a ReadingPart from string
     #[inline]
-    pub fn from_str(s: &str) -> ReadingPart {
+    pub fn from_str_unchecked(s: &str) -> ReadingPart {
         // TODO: find a better way to do this
         ReadingPartRef::from_str(s).to_owned()
     }
+}
 
-    /// Parses a ReadingPart from string
+impl FromStr for ReadingPart {
+    type Err = ();
+
     #[inline]
-    pub fn from_str_checked(s: &str) -> Result<ReadingPart, ()> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         // TODO: find a better way to do this
-        Ok(ReadingPartRef::from_str_checked(s)?.to_owned())
+        ReadingPartRef::from_str_checked(s).map(|i| i.to_owned())
+    }
+}
+
+impl ToString for ReadingPart {
+    #[inline]
+    fn to_string(&self) -> String {
+        self.encode().unwrap_or_default()
     }
 }
 

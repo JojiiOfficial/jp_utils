@@ -12,6 +12,6 @@ itertools = {version = "*", optional = true}
 test-case = "*"
 
 [features]
-default = ["furigana"]
+default = []
 hiragana = []
 furigana = ["itertools"]
