@@ -18,13 +18,13 @@ pub enum ReadingPart {
 impl ReadingPart {
     /// Create a new `SentencePart` with kana only
     #[inline]
-    fn new_kana(kana: String) -> Self {
+    pub fn new_kana(kana: String) -> Self {
         Self::Kana(kana)
     }
 
     /// Create a new `SentencePart` with kanji value
     #[inline]
-    fn new_kanji(kanji: String, kana: String) -> Self {
+    pub fn new_kanji(kanji: String, kana: String) -> Self {
         Self::Kanji {
             kanji,
             readings: vec![kana],
