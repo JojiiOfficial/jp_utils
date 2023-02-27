@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 /// Represents a single part of a reading that can either be a kana only reading or a kanji reading
 /// with a kana part that describes the kanjis reading
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Debug, Eq)]
 pub enum ReadingPart {
     // Kana reading
     Kana(String),
@@ -168,10 +168,14 @@ where
 {
     #[inline]
     fn from(s: (S, Vec<S>)) -> Self {
-        let readings = s.1.into_iter().map(|i| i.as_ref().to_string()).collect();
-        Self::Kanji {
-            kanji: s.0.as_ref().to_string(),
-            readings,
+        if s.1.is_empty() {
+            Self::new_kana(s.0.as_ref().to_string())
+        } else {
+            let readings = s.1.into_iter().map(|i| i.as_ref().to_string()).collect();
+            Self::Kanji {
+                kanji: s.0.as_ref().to_string(),
+                readings,
+            }
         }
     }
 }
@@ -209,5 +213,44 @@ impl From<(&str, Option<&str>)> for ReadingPart {
         } else {
             Self::Kana(s.0.to_string())
         }
+    }
+}
+
+impl<'a> PartialEq<ReadingPartRef<'a>> for ReadingPart {
+    fn eq(&self, other: &ReadingPartRef) -> bool {
+        match (self, other) {
+            (ReadingPart::Kana(s_kana), ReadingPartRef::Kana(o_kana)) => s_kana == o_kana,
+            (
+                ReadingPart::Kana(_),
+                ReadingPartRef::Kanji {
+                    kanji: _,
+                    readings: _,
+                },
+            )
+            | (
+                ReadingPart::Kanji {
+                    kanji: _,
+                    readings: _,
+                },
+                ReadingPartRef::Kana(_),
+            ) => false,
+            (
+                ReadingPart::Kanji {
+                    kanji: self_k,
+                    readings: self_r,
+                },
+                ReadingPartRef::Kanji {
+                    kanji: other_k,
+                    readings: other_r,
+                },
+            ) => self_k == other_k && self_r == other_r,
+        }
+    }
+}
+
+impl<'a> PartialEq<ReadingPartRef<'a>> for &ReadingPart {
+    #[inline]
+    fn eq(&self, other: &ReadingPartRef) -> bool {
+        (*self).eq(other)
     }
 }

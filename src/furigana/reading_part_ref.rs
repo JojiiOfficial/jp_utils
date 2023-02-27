@@ -1,7 +1,7 @@
 use super::{as_part::AsPart, reading_part::ReadingPart};
 
 /// Same as ReadingPart but borrowed
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Debug, Eq)]
 pub enum ReadingPartRef<'a> {
     // Kana reading
     Kana(&'a str),
@@ -226,5 +226,19 @@ impl<'a> From<(&'a str, &'a str)> for ReadingPartRef<'a> {
     #[inline]
     fn from(s: (&'a str, &'a str)) -> Self {
         Self::new_kanji(s.0, s.1)
+    }
+}
+
+impl<'a> PartialEq<ReadingPart> for ReadingPartRef<'a> {
+    #[inline]
+    fn eq(&self, other: &ReadingPart) -> bool {
+        other.eq(self)
+    }
+}
+
+impl<'a> PartialEq<ReadingPart> for &ReadingPartRef<'a> {
+    #[inline]
+    fn eq(&self, other: &ReadingPart) -> bool {
+        other.eq(*self)
     }
 }

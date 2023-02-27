@@ -77,6 +77,16 @@ pub trait AsPart {
     {
         ReadingIter::new(self)
     }
+
+    /// Returns the main reading of the part. This is the Kanji reading if the part is a kanji or
+    /// the kana reading if the part is a kana part.
+    fn main_reading(&self) -> &str {
+        if let Some(kanji) = self.as_kanji() {
+            return kanji.as_ref();
+        }
+
+        self.as_kana().unwrap().as_ref()
+    }
 }
 
 #[cfg(test)]

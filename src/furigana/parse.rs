@@ -1,4 +1,4 @@
-use super::reading_part_ref::ReadingPartRef;
+use super::{reading_part::ReadingPart, reading_part_ref::ReadingPartRef, seq::FuriSequence};
 use std::{iter::Peekable, str::CharIndices};
 
 /// Returns an iterator over all parsed ReadingParts of the given input string
@@ -13,6 +13,20 @@ pub fn from_str(input: &str) -> FuriParseIter {
 #[inline]
 pub fn full(input: &str) -> Result<Vec<ReadingPartRef>, ()> {
     from_str(input).collect::<Result<Vec<_>, _>>()
+}
+
+/// Similar to `full` but returns a Furigana sequence
+#[inline]
+pub fn parse_seq(input: &str) -> Result<FuriSequence<ReadingPart>, ()> {
+    from_str(input)
+        .map(|i| i.map(|i| i.to_owned()))
+        .collect::<Result<_, _>>()
+}
+
+/// Similar to `parse_seq` but returns borrowed items
+#[inline]
+pub fn parse_seq_ref(input: &str) -> Result<FuriSequence<ReadingPartRef>, ()> {
+    from_str(input).collect::<Result<_, _>>()
 }
 
 /// Similar to `full` but ignores parts that contain errors
