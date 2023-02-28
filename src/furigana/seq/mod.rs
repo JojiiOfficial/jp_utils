@@ -5,8 +5,8 @@ use self::{
     iter::{IterItem, SeqIter},
     reading::Reading,
 };
-use super::as_part::AsPart;
-use std::slice::Iter;
+use super::{as_part::AsPart, encode, reading_part::ReadingPart};
+use std::{slice::Iter, str::FromStr};
 
 /// Sequence of multiple furigana reading parts.
 pub struct FuriSequence<T> {
@@ -71,6 +71,12 @@ where
         self.parts.get(pos)
     }
 
+    /// Push a part to the end of the sequence
+    #[inline]
+    pub fn push_part(&mut self, part: T) {
+        self.parts.push(part);
+    }
+
     /// Returns an iter over borrowed items of the parts
     #[inline]
     pub fn iter(&self) -> Iter<'_, T> {
@@ -81,6 +87,28 @@ where
     #[inline]
     pub fn into_parts(self) -> Vec<T> {
         self.parts
+    }
+
+    /// Encodes the sequence to a parsable furigana string.
+    #[inline]
+    pub fn encode(&self) -> String {
+        encode::sequence(self.iter())
+    }
+}
+
+impl FromStr for FuriSequence<ReadingPart> {
+    type Err = ();
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(super::parse::parse_seq(s)?)
+    }
+}
+
+impl<T: AsPart> ToString for FuriSequence<T> {
+    #[inline]
+    fn to_string(&self) -> String {
+        self.encode()
     }
 }
 
@@ -126,6 +154,16 @@ where
     #[inline]
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<T> Extend<T> for FuriSequence<T>
+where
+    T: AsPart,
+{
+    #[inline]
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        self.parts.extend(iter)
     }
 }
 
