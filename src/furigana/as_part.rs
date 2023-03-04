@@ -1,4 +1,4 @@
-use super::{encode, reading_iter::ReadingIter};
+use super::{encode, flatten_iter::FlattenIter, reading_iter::ReadingIter};
 use itertools::Itertools;
 
 /// Trait defining common behavior for ReadingParts
@@ -67,6 +67,15 @@ pub trait AsPart {
             // A part is always either a kanji or a kana part
             unreachable!()
         }
+    }
+
+    /// Returns an iterator over flattened readings
+    #[inline]
+    fn reading_flattened<'a>(&'a self) -> FlattenIter<'a, Self::StrType>
+    where
+        Self: Sized,
+    {
+        FlattenIter::new(self)
     }
 
     /// Returns an iterator over all readings of the part

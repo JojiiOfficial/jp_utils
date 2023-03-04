@@ -1,6 +1,7 @@
 pub mod as_part;
 pub mod compare;
 pub mod encode;
+pub mod flatten_iter;
 pub mod parse;
 pub mod reading_iter;
 pub mod reading_part;

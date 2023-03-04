@@ -50,6 +50,14 @@ impl FuriComparator {
         left: &FuriSequence<L>,
         right: &FuriSequence<R>,
     ) -> bool {
+        /* let l_iter = left.flattened_iter();
+        let r_iter = right.flattened_iter();
+        for (l, r) in l_iter.zip(r_iter) {
+            if l != r {
+                return false;
+            }
+        }
+        true */
         let mut l_iter = left.iter().map(|i| i.reading_iter()).flatten();
         let mut r_iter = right.iter().map(|i| i.reading_iter()).flatten();
         loop {

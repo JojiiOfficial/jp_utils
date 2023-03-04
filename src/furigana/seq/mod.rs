@@ -83,6 +83,13 @@ where
         self.parts.iter()
     }
 
+    /// Returns an iterator over all reading parts with kanji readings split into separate
+    /// ReadingParts.
+    #[inline]
+    pub fn flattened_iter(&self) -> impl Iterator<Item = ReadingPart> + '_ {
+        self.parts.iter().map(|i| i.reading_flattened()).flatten()
+    }
+
     /// Converts the sequence into a Vec of its parts
     #[inline]
     pub fn into_parts(self) -> Vec<T> {

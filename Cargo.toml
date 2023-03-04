@@ -10,8 +10,14 @@ itertools = {version = "*", optional = true}
 
 [dev-dependencies]
 test-case = "*"
+criterion = "0.4.0"
+rand = "0.8.5"
 
 [features]
 default = ["furigana"]
 hiragana = []
 furigana = ["itertools"]
+
+ [[bench]]
+name = "my_bench"
+harness = false
