@@ -23,6 +23,16 @@ where
         Self { parts: vec![] }
     }
 
+    #[inline]
+    pub fn new_with_parts<I>(parts: I) -> Self
+    where
+        I: Into<Vec<T>>,
+    {
+        Self {
+            parts: parts.into(),
+        }
+    }
+
     /// Create a new empty sequence of furigana parts with a given capacity
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {

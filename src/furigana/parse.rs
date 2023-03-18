@@ -29,6 +29,15 @@ pub fn parse_seq_ref(input: &str) -> Result<FuriSequence<ReadingPartRef>, ()> {
     from_str(input).collect::<Result<_, _>>()
 }
 
+/// Similar to `parse_seq` but returns borrowed items
+#[inline]
+pub fn parse_seq_ref_unchecked(input: &str) -> FuriSequence<ReadingPartRef> {
+    FuriParseIter::new(input)
+        .unchecked()
+        .map(|i| i.unwrap())
+        .collect()
+}
+
 /// Similar to `full` but ignores parts that contain errors
 #[inline]
 pub fn unchecked(input: &str) -> Vec<ReadingPartRef> {
