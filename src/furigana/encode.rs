@@ -1,6 +1,19 @@
 use super::as_part::AsPart;
 use itertools::Itertools;
 
+/// Encodes a reading. Returns a kanji block if `kanji` is Some() and `kana` as owned if not.
+pub fn reading<A, B>(kana: A, kanji: Option<B>) -> String
+where
+    A: AsRef<str>,
+    B: AsRef<str>,
+{
+    if let Some(kanji) = kanji {
+        single_block(kanji, kana)
+    } else {
+        kana.as_ref().to_string()
+    }
+}
+
 /// Encodes a single furigana block
 #[inline]
 pub fn single_block(kanji: impl AsRef<str>, kana: impl AsRef<str>) -> String {
