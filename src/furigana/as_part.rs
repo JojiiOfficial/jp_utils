@@ -28,6 +28,28 @@ pub trait AsPart {
     /// Returns the kanji readings
     fn readings(&self) -> Option<&Vec<Self::StrType>>;
 
+    /// Returns a list of kanjis assigned to their readings.
+    fn literal_readings(&self) -> Option<Vec<(String, String)>> {
+        let readings = self.readings()?;
+        let res;
+
+        if self.detailed_readings()? {
+            res = self
+                .as_kanji()?
+                .as_ref()
+                .chars()
+                .zip(readings.iter())
+                .map(|(lit, r)| (lit.to_string(), r.as_ref().to_string()))
+                .collect();
+        } else {
+            let kanji = self.as_kanji()?.as_ref().to_string();
+            let reading = self.kana_reading();
+            res = vec![(kanji, reading)];
+        }
+
+        Some(res)
+    }
+
     /// Returns `Some(true)` if each kanji has its own reading assigned. Returns `None` if reading
     /// is not a kanji reading
     fn detailed_readings(&self) -> Option<bool> {
