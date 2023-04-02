@@ -1,7 +1,7 @@
 use super::{as_part::AsPart, reading_part::ReadingPart};
 
 /// Same as ReadingPart but borrowed
-#[derive(Clone, PartialEq, Debug, Eq)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 pub enum ReadingPartRef<'a> {
     // Kana reading
     Kana(&'a str),

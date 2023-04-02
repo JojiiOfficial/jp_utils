@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 /// Represents a single part of a reading that can either be a kana only reading or a kanji reading
 /// with a kana part that describes the kanjis reading
-#[derive(Clone, PartialEq, Debug, Eq)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 pub enum ReadingPart {
     // Kana reading
     Kana(String),
