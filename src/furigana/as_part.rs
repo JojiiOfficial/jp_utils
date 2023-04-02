@@ -1,3 +1,5 @@
+use crate::reading::r_owned::ReadingOwned;
+
 use super::{encode, flatten_iter::FlattenIter, reading_iter::ReadingIter};
 use itertools::Itertools;
 
@@ -113,6 +115,15 @@ pub trait AsPart {
         }
 
         self.as_kana().unwrap().as_ref()
+    }
+
+    /// Returns a ReadingOwned representing the reading of the part.
+    fn to_reading(&self) -> ReadingOwned {
+        if let Some(kanji) = self.as_kanji() {
+            ReadingOwned::new_with_kanji(self.kana_reading(), kanji.as_ref().to_string())
+        } else {
+            ReadingOwned::new(self.kana_reading())
+        }
     }
 }
 

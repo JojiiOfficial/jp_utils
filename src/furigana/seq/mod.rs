@@ -1,6 +1,8 @@
 pub mod iter;
 pub mod reading;
 
+use crate::reading::r_owned::ReadingOwned;
+
 use self::{
     iter::{IterItem, SeqIter},
     reading::Reading,
@@ -118,6 +120,18 @@ where
     #[inline]
     pub fn has_kanji(&self) -> bool {
         self.parts.iter().any(|i| i.is_kanji())
+    }
+
+    /// Returns a ReadingOwned representing the reading of the sequence.
+    pub fn to_reading(&self) -> ReadingOwned {
+        if self.has_kanji() {
+            ReadingOwned::new_with_kanji(
+                self.kana_reading().to_string(),
+                self.kanji_reading().to_string(),
+            )
+        } else {
+            ReadingOwned::new(self.kana_reading().to_string())
+        }
     }
 }
 
