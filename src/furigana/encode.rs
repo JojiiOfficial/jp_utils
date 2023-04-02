@@ -36,5 +36,5 @@ where
     I: IntoIterator<Item = &'a P>,
     P: AsPart + 'a,
 {
-    iter.into_iter().filter_map(|i| i.encode()).join("")
+    iter.into_iter().map(|i| i.encode()).join("")
 }

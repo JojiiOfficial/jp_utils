@@ -127,6 +127,9 @@ impl<'a> Iterator for FuriParseIter<'a> {
 mod test {
     use std::fs::File;
     use std::io::{BufRead, BufReader};
+    use std::str::FromStr;
+
+    use crate::furigana::as_part::AsPart;
 
     use super::super::encode;
     use super::*;
@@ -155,6 +158,12 @@ mod test {
     fn test_parse_furigana_error(furi: &str) {
         let parsed = from_str(furi).collect::<Result<Vec<_>, _>>();
         assert_eq!(parsed, Err(()));
+    }
+
+    #[test]
+    fn test_empty() {
+        let e = ReadingPart::from_str("").unwrap();
+        assert!(e.is_empty());
     }
 
     #[test]

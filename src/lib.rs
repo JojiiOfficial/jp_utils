@@ -8,6 +8,7 @@ pub mod alphabet;
 pub mod constants;
 pub mod counter;
 pub mod radicals;
+pub mod reading;
 pub mod tokenize;
 pub mod trait_ext;
 

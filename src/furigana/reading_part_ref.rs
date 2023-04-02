@@ -92,7 +92,7 @@ impl<'a> ReadingPartRef<'a> {
 impl<'a> ToString for ReadingPartRef<'a> {
     #[inline]
     fn to_string(&self) -> String {
-        self.encode().unwrap_or_default()
+        self.encode()
     }
 }
 
@@ -240,5 +240,47 @@ impl<'a> PartialEq<ReadingPart> for &ReadingPartRef<'a> {
     #[inline]
     fn eq(&self, other: &ReadingPart) -> bool {
         other.eq(*self)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'a> serde::Serialize for ReadingPartRef<'a> {
+    #[inline]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.encode())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'a, 'de: 'a> serde::Deserialize<'de> for ReadingPartRef<'a> {
+    #[inline]
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_string(RpDeser)
+    }
+}
+
+#[cfg(feature = "serde")]
+struct RpDeser;
+
+#[cfg(feature = "serde")]
+impl<'de> serde::de::Visitor<'de> for RpDeser {
+    type Value = ReadingPartRef<'de>;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "Expected string in furigana format!")
+    }
+
+    #[inline]
+    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        Ok(ReadingPartRef::from_str(v))
     }
 }

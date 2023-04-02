@@ -68,23 +68,19 @@ pub trait AsPart {
     fn add_reading(&mut self, r: Self::StrType);
 
     /// Encodes the part into a string
-    fn encode(&self) -> Option<String> {
-        if self.is_empty() {
-            return None;
-        }
-
+    fn encode(&self) -> String {
         if let Some(kanji) = self.as_kanji() {
             let kanji = kanji.as_ref();
             let readings = self.readings().unwrap();
 
             if self.detailed_readings().unwrap() {
-                Some(encode::multi_block(kanji, readings))
+                encode::multi_block(kanji, readings)
             } else {
                 let readings_combined = readings.iter().map(|i| i.as_ref()).join("");
-                Some(encode::single_block(kanji, readings_combined))
+                encode::single_block(kanji, readings_combined)
             }
         } else if let Some(kana) = self.as_kana() {
-            Some(kana.as_ref().to_string())
+            kana.as_ref().to_string()
         } else {
             // A part is always either a kanji or a kana part
             unreachable!()
@@ -132,6 +128,6 @@ mod test {
     #[test_case(("音楽", vec!["おん","がく"]), "[音楽|おん|がく]"; "MultipleKanji")]
     #[test_case(("大学生", vec!["だい","がくせい"]), "[大学生|だいがくせい]"; "Malformed kanji readings")]
     fn test_encode(part: impl Into<ReadingPart>, exp: &str) {
-        assert_eq!(part.into().encode().unwrap(), exp);
+        assert_eq!(part.into().encode(), exp);
     }
 }

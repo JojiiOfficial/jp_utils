@@ -5,10 +5,12 @@ use self::{
     iter::{IterItem, SeqIter},
     reading::Reading,
 };
-use super::{as_part::AsPart, encode, reading_part::ReadingPart};
+use super::{as_part::AsPart, encode, reading_part::ReadingPart, reading_part_ref::ReadingPartRef};
 use std::{slice::Iter, str::FromStr};
 
 /// Sequence of multiple furigana reading parts.
+#[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, PartialEq, Eq)]
 pub struct FuriSequence<T> {
     parts: Vec<T>,
 }
@@ -111,6 +113,19 @@ where
     pub fn encode(&self) -> String {
         encode::sequence(self.iter())
     }
+
+    /// Returns `true` if the FuriSequence has at least one kanji part.
+    #[inline]
+    pub fn has_kanji(&self) -> bool {
+        self.parts.iter().any(|i| i.is_kanji())
+    }
+}
+
+impl<'a> FuriSequence<ReadingPartRef<'a>> {
+    #[inline]
+    pub fn to_owned(&self) -> FuriSequence<ReadingPart> {
+        self.iter().map(|i| i.to_owned()).collect()
+    }
 }
 
 impl FromStr for FuriSequence<ReadingPart> {
@@ -184,9 +199,91 @@ where
     }
 }
 
+#[cfg(feature = "serde")]
+impl<T> serde::Serialize for FuriSequence<T>
+where
+    T: AsPart,
+{
+    #[inline]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.encode())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for FuriSequence<ReadingPart> {
+    #[inline]
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_string(RPDeser)
+    }
+}
+
+#[cfg(feature = "serde")]
+struct RPDeser;
+
+#[cfg(feature = "serde")]
+impl<'de> serde::de::Visitor<'de> for RPDeser {
+    type Value = FuriSequence<ReadingPart>;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "Expected string in furigana format!")
+    }
+
+    #[inline]
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        let furi = super::parse::parse_seq(v)
+            .map_err(|_| serde::de::Error::custom("Invalid Furigana format"))?;
+        Ok(furi)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'a, 'de: 'a> serde::Deserialize<'de> for FuriSequence<ReadingPartRef<'a>> {
+    #[inline]
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_string(RPDeserRef)
+    }
+}
+
+#[cfg(feature = "serde")]
+struct RPDeserRef;
+
+#[cfg(feature = "serde")]
+impl<'de> serde::de::Visitor<'de> for RPDeserRef {
+    type Value = FuriSequence<ReadingPartRef<'de>>;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "Expected string in furigana format!")
+    }
+
+    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        let furi = super::parse::parse_seq_ref(v)
+            .map_err(|_| serde::de::Error::custom("Invalid Furigana format"))?;
+        Ok(furi)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::furigana::{parse::parse_seq_ref, reading_part::ReadingPart};
+    use crate::furigana::{
+        parse::parse_seq_ref, reading_part::ReadingPart, reading_part_ref::ReadingPartRef,
+        seq::FuriSequence,
+    };
     use test_case::test_case;
 
     #[test_case("[音楽|おん|がく]が[好|す]き", "おんがくがすき"; "seq_to_kana1")]
@@ -213,5 +310,16 @@ mod tests {
             let exp_item = exp_item.into();
             assert_eq!(&*s_item, exp_item);
         }
+    }
+
+    #[test_case("[音楽|おんがく]が[好|す]き"; "serde1")]
+    #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]"; "serde2")]
+    fn test_serde(furi: &str) {
+        let seq = parse_seq_ref(furi).unwrap();
+        let json = serde_json::to_string(&seq).unwrap();
+        let parsed: FuriSequence<ReadingPart> = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, seq.to_owned());
+        let parsed_ref: FuriSequence<ReadingPartRef> = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed_ref, seq);
     }
 }
