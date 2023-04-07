@@ -12,7 +12,7 @@ use std::{slice::Iter, str::FromStr};
 
 /// Sequence of multiple furigana reading parts.
 #[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FuriSequence<T> {
     parts: Vec<T>,
 }

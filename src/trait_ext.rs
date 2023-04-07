@@ -34,11 +34,14 @@ pub trait JapaneseExt {
     /// Returns true if self is written in katakana
     fn is_katakana(&self) -> bool;
 
-    /// Returns true if self is written in katakana
+    /// Returns true if self has at least one katakana literal
     fn has_katakana(&self) -> bool;
 
     /// Returns true if self is written in hiragana
     fn is_hiragana(&self) -> bool;
+
+    /// Returns true if self has at least one hiragana letter
+    fn has_hiragana(&self) -> bool;
 
     /// Returns the amount of kanji self has
     fn kanji_count(&self) -> usize;
@@ -156,6 +159,11 @@ impl JapaneseExt for char {
     #[inline]
     fn is_hiragana(&self) -> bool {
         (*self) >= '\u{3040}' && (*self) <= '\u{309F}'
+    }
+
+    #[inline]
+    fn has_hiragana(&self) -> bool {
+        self.is_hiragana()
     }
 
     #[inline]
@@ -340,6 +348,11 @@ impl JapaneseExt for str {
     #[inline]
     fn is_hiragana(&self) -> bool {
         self.chars().all(|s| s.is_hiragana())
+    }
+
+    #[inline]
+    fn has_hiragana(&self) -> bool {
+        self.chars().any(|s| s.is_hiragana())
     }
 
     #[inline]
