@@ -111,7 +111,14 @@ impl<'a> Iterator for FuriParseIter<'a> {
 
         let end = match self.advance_chars(is_kanji_block) {
             Ok(o) => o,
-            Err(e) => return Some(Err(e)),
+            // Err(e) => return Some(Err(e)),
+            Err(e) => {
+                if self.checked {
+                    return Some(Err(e));
+                } else {
+                    return Some(Ok(ReadingPartRef::Kana(&self.inp[nidx..nidx + 1])));
+                }
+            }
         };
 
         let furi_part = &self.inp[nidx..end];
@@ -139,6 +146,7 @@ mod test {
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]")]
     #[test_case("[楽|たの]しい")]
     #[test_case("この[人|ひと]が[嫌|きら]いです。")]
+    #[test_case("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。"; "with brackets")]
     fn test_parse_furigana(furi: &str) {
         let parsed = from_str(furi)
             .unchecked()
