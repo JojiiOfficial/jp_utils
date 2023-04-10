@@ -4,7 +4,7 @@ name = "jp_utils"
 authors = ["jojii <jojii@gmx.net>"]
 version = "0.1.0"
 edition = "2021"
-license = "GPLv3"
+license = "AGPL-3.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
