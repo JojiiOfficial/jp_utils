@@ -319,20 +319,14 @@ impl JapaneseExt for str {
 
     #[inline]
     fn is_japanese(&self) -> bool {
-        let mut buf = [0; 16];
-        !self.chars().any(|c| {
-            let s = c.encode_utf8(&mut buf);
-            !s.is_kana() && !s.is_kanji() && !s.is_symbol() && !s.is_roman_letter()
-        })
+        self.chars()
+            .all(|c| c.is_kana() || c.is_kanji() || c.is_symbol() || c.is_roman_letter())
     }
 
     #[inline]
     fn has_japanese(&self) -> bool {
-        let mut buf = [0; 16];
-        self.chars().any(|c| {
-            let s = c.encode_utf8(&mut buf);
-            s.is_kana() || s.is_kanji() || s.is_symbol() || s.is_roman_letter()
-        })
+        self.chars()
+            .any(|s| s.is_kana() || s.is_kanji() || s.is_symbol() || s.is_roman_letter())
     }
 
     #[inline]
