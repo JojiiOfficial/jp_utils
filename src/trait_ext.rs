@@ -252,7 +252,7 @@ impl JapaneseExt for char {
 
     #[inline]
     fn is_counter(&self) -> bool {
-        counter::is_counter(&self.to_string())
+        counter::is_counter(self.to_string())
     }
 
     #[inline]
@@ -402,8 +402,7 @@ impl JapaneseExt for str {
 
     #[inline]
     fn starts_with_alphabet(&self, a: Alphabet) -> bool {
-        let first = self.chars().nth(0);
-        match first {
+        match self.chars().next() {
             Some(s) => s.is_in_alphabet(a),
             None => false,
         }

@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use jp_utils::{
-    furigana::{self, compare::FuriComparator, parse::parse_seq_ref, seq::FuriSequence},
-    reading::r_owned::ReadingOwned,
+    furigana::{compare::FuriComparator, parse::FuriParser, seq::FuriSequence, Furigana},
+    reading::Reading,
 };
 
 fn index_item_decode(c: &mut Criterion) {
@@ -13,24 +13,24 @@ fn index_item_decode(c: &mut Criterion) {
 
     c.bench_function("bench parse", |b| {
         b.iter(|| {
-            let _ = furigana::parse::parse_seq(black_box(example));
+            let _ = FuriSequence::parse_ref(black_box(example));
         });
     });
 
     c.bench_function("bench parse ref", |b| {
         b.iter(|| {
-            let _ = furigana::parse::parse_seq_ref(black_box(example));
+            let _ = FuriParser::new(black_box(example)).count();
         });
     });
 
-    c.bench_function("bench parse ref unchecked", |b| {
+    c.bench_function("bench parse ref unchecked new", |b| {
         b.iter(|| {
-            let _ = furigana::parse::parse_seq_ref_unchecked(black_box(example));
+            let _ = FuriParser::new(black_box(example)).unchecked().count();
         });
     });
 
-    let example_seq = parse_seq_ref(example).unwrap();
-    let example2_seq = parse_seq_ref(example2).unwrap();
+    let example_seq = FuriSequence::parse_ref(example).unwrap();
+    let example2_seq = FuriSequence::parse_ref(example2).unwrap();
     c.bench_function("bench compare equal literals", |b| {
         b.iter(|| {
             let _ =
@@ -49,7 +49,23 @@ fn index_item_decode(c: &mut Criterion) {
         let seq = FuriSequence::from_str(example).unwrap();
 
         b.iter(|| {
-            let _: ReadingOwned = (&seq).into();
+            let _: Reading = (&seq).into();
+        });
+    });
+
+    c.bench_function("Furigana to kanji", |b| {
+        let furi = Furigana::new_unchecked(example);
+
+        b.iter(|| {
+            let _ = furi.kanji();
+        });
+    });
+
+    c.bench_function("Furigana to kana", |b| {
+        let furi = Furigana::new_unchecked(example);
+
+        b.iter(|| {
+            let _ = furi.kana();
         });
     });
 }

@@ -1,4 +1,4 @@
-use super::{as_part::AsPart, reading_part::ReadingPart};
+use super::{AsPart, ReadingPart};
 
 /// Same as ReadingPart but borrowed
 #[derive(Clone, PartialEq, Debug, Eq, Hash)]
@@ -54,7 +54,7 @@ impl<'a> ReadingPartRef<'a> {
     }
 
     /// Parses a ReadingPart from string
-    pub fn from_str(str: &'a str) -> ReadingPartRef {
+    pub fn from_str_unchecked(str: &'a str) -> ReadingPartRef {
         if str.starts_with('[') && str.ends_with(']') {
             Self::parse_kanji_str(str, false).unwrap()
         } else {
@@ -67,7 +67,7 @@ impl<'a> ReadingPartRef<'a> {
     /// are more than 1 (fallback) the function returns None.
     fn parse_kanji_str(s: &'a str, checked: bool) -> Option<ReadingPartRef> {
         // Strip [ and ] and split at the |
-        let mut split = (&s[1..s.len() - 1]).split('|');
+        let mut split = s[1..s.len() - 1].split('|');
 
         // First item is the kanji reading
         let kanji = split.next()?;
@@ -123,7 +123,7 @@ impl<'a> AsPart for ReadingPartRef<'a> {
 
     /// Returns the kana reading
     #[inline]
-    fn as_kana<'b>(&'b self) -> Option<&'b Self::StrType> {
+    fn as_kana(&self) -> Option<&Self::StrType> {
         match self {
             ReadingPartRef::Kana(k) => Some(k),
             ReadingPartRef::Kanji { .. } => None,
@@ -132,7 +132,7 @@ impl<'a> AsPart for ReadingPartRef<'a> {
 
     /// Returns the kanji reading if exists
     #[inline]
-    fn as_kanji<'b>(&'b self) -> Option<&'b Self::StrType> {
+    fn as_kanji(&self) -> Option<&Self::StrType> {
         match self {
             ReadingPartRef::Kana(_) => None,
             ReadingPartRef::Kanji { kanji, readings: _ } => Some(kanji),
@@ -152,7 +152,7 @@ impl<'a> AsPart for ReadingPartRef<'a> {
     fn set_kanji(&mut self, s: Self::StrType) {
         match self {
             ReadingPartRef::Kana(k) => {
-                *self = Self::new_kanji(s, *k);
+                *self = Self::new_kanji(s, k);
             }
             ReadingPartRef::Kanji { kanji, readings: _ } => *kanji = s,
         }
@@ -281,6 +281,6 @@ impl<'de> serde::de::Visitor<'de> for RpDeser {
     where
         E: serde::de::Error,
     {
-        Ok(ReadingPartRef::from_str(v))
+        Ok(ReadingPartRef::from_str_unchecked(v))
     }
 }

@@ -1,6 +1,5 @@
-use crate::reading::r_owned::ReadingOwned;
-
-use super::{encode, flatten_iter::FlattenIter, reading_iter::ReadingIter};
+use super::{encode, FlattenIter, ReadingIter};
+use crate::reading::Reading;
 use itertools::Itertools;
 
 /// Trait defining common behavior for ReadingParts
@@ -18,10 +17,10 @@ pub trait AsPart {
     fn is_kanji(&self) -> bool;
 
     /// Returns the kana reading
-    fn as_kana<'a>(&'a self) -> Option<&'a Self::StrType>;
+    fn as_kana(&self) -> Option<&Self::StrType>;
 
     /// Returns the kanji reading if exists
-    fn as_kanji<'a>(&'a self) -> Option<&'a Self::StrType>;
+    fn as_kanji(&self) -> Option<&Self::StrType>;
 
     /// Returns the kana reading of the reading part. This is equal to .get_kana() for kana reading
     /// parts and equal to all kanji readings merged to one
@@ -33,21 +32,19 @@ pub trait AsPart {
     /// Returns a list of kanjis assigned to their readings.
     fn literal_readings(&self) -> Option<Vec<(String, String)>> {
         let readings = self.readings()?;
-        let res;
 
-        if self.detailed_readings()? {
-            res = self
-                .as_kanji()?
+        let res = if self.detailed_readings()? {
+            self.as_kanji()?
                 .as_ref()
                 .chars()
                 .zip(readings.iter())
                 .map(|(lit, r)| (lit.to_string(), r.as_ref().to_string()))
-                .collect();
+                .collect()
         } else {
             let kanji = self.as_kanji()?.as_ref().to_string();
             let reading = self.kana_reading();
-            res = vec![(kanji, reading)];
-        }
+            vec![(kanji, reading)]
+        };
 
         Some(res)
     }
@@ -91,7 +88,7 @@ pub trait AsPart {
 
     /// Returns an iterator over flattened readings
     #[inline]
-    fn reading_flattened<'a>(&'a self) -> FlattenIter<'a, Self::StrType>
+    fn reading_flattened(&self) -> FlattenIter<'_, Self::StrType>
     where
         Self: Sized,
     {
@@ -118,18 +115,19 @@ pub trait AsPart {
     }
 
     /// Returns a ReadingOwned representing the reading of the part.
-    fn to_reading(&self) -> ReadingOwned {
+    fn to_reading(&self) -> Reading {
         if let Some(kanji) = self.as_kanji() {
-            ReadingOwned::new_with_kanji(self.kana_reading(), kanji.as_ref().to_string())
+            Reading::new_with_kanji(self.kana_reading(), kanji.as_ref().to_string())
         } else {
-            ReadingOwned::new(self.kana_reading())
+            Reading::new(self.kana_reading())
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::super::reading_part::ReadingPart;
+    use crate::furigana::part::ReadingPart;
+
     use super::AsPart;
     use test_case::test_case;
 

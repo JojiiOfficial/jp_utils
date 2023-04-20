@@ -1,4 +1,4 @@
-use super::as_part::AsPart;
+use super::AsPart;
 use itertools::Itertools;
 
 /// Encodes a reading. Returns a kanji block if `kanji` is Some() and `kana` as owned if not.
@@ -22,7 +22,7 @@ pub fn single_block(kanji: impl AsRef<str>, kana: impl AsRef<str>) -> String {
 
 /// Encodes a set of kanji with their own assigned readings. Requires `readings` to drop at least
 /// one element which would output the same as a `single_block(..)` call
-pub fn multi_block<S>(kanji: impl AsRef<str>, readings: &Vec<S>) -> String
+pub fn multi_block<S>(kanji: impl AsRef<str>, readings: &[S]) -> String
 where
     S: AsRef<str>,
 {

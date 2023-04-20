@@ -1,14 +1,14 @@
 use super::FuriSequence;
-use crate::furigana::as_part::AsPart;
+use crate::furigana::part::AsPart;
 
 /// A `reading` view over `FuriSequence` that targets a given reading (kanji or kana) of the
 /// furigana sequence
-pub struct Reading<'a, T> {
+pub struct SReading<'a, T> {
     r: &'a FuriSequence<T>,
     kana: bool,
 }
 
-impl<'a, T> Reading<'a, T>
+impl<'a, T> SReading<'a, T>
 where
     T: AsPart,
 {
@@ -24,6 +24,11 @@ where
         } else {
             self.r.iter().map(|i| i.main_reading().len()).sum()
         }
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.r.is_empty()
     }
 
     /// Returns the amount of characters of the reading
@@ -42,7 +47,7 @@ where
     }
 }
 
-impl<'a, T> ToString for Reading<'a, T>
+impl<'a, T> ToString for SReading<'a, T>
 where
     T: AsPart,
 {

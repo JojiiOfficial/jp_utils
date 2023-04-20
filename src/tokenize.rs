@@ -3,7 +3,7 @@ use std::iter;
 
 /// Returns an iterator over all kanji / kana. If `kana_same` is `true` hiragana won't be split
 /// from katakana
-pub fn by_alphabet<'a>(kanji: &'a str, kana_same: bool) -> impl Iterator<Item = &'a str> {
+pub fn by_alphabet(kanji: &str, kana_same: bool) -> impl Iterator<Item = &str> {
     let mut kanji_indices = kanji.char_indices().peekable();
 
     iter::from_fn(move || {
@@ -24,7 +24,7 @@ pub fn by_alphabet<'a>(kanji: &'a str, kana_same: bool) -> impl Iterator<Item = 
 }
 
 /// Returns an iterator over all substrings of `inp` that have the given alphabet
-pub fn words_with_alphabet<'a>(inp: &'a str, alphabet: Alphabet) -> impl Iterator<Item = &'a str> {
+pub fn words_with_alphabet(inp: &str, alphabet: Alphabet) -> impl Iterator<Item = &str> {
     let inp = inp.trim();
 
     let mut char_iter = inp.char_indices();

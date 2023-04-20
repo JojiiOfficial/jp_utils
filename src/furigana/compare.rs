@@ -1,4 +1,4 @@
-use super::{as_part::AsPart, seq::FuriSequence};
+use super::{part::AsPart, seq::FuriSequence};
 
 /// Comparator for furigana blocks
 pub struct FuriComparator {
@@ -58,8 +58,8 @@ impl FuriComparator {
             }
         }
         true */
-        let mut l_iter = left.iter().map(|i| i.reading_iter()).flatten();
-        let mut r_iter = right.iter().map(|i| i.reading_iter()).flatten();
+        let mut l_iter = left.iter().flat_map(|i| i.reading_iter());
+        let mut r_iter = right.iter().flat_map(|i| i.reading_iter());
         loop {
             match (l_iter.next(), r_iter.next()) {
                 (None, None) => break,

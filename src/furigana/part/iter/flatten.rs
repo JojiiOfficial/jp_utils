@@ -1,6 +1,7 @@
-use super::{as_part::AsPart, reading_part::ReadingPart};
 use itertools::Itertools;
 use std::str::CharIndices;
+
+use crate::furigana::part::{AsPart, ReadingPart};
 
 /// Iterator over reading parts that flattenes readings which means that a part with multiple
 /// kanji-kana readings will yield multiple Parts each holding a single kanji-kana reading.
@@ -115,7 +116,7 @@ where
 #[cfg(test)]
 mod test {
     use super::FlattenIter;
-    use crate::furigana::{as_part::AsPart, reading_part::ReadingPart};
+    use crate::furigana::{part::AsPart, part::ReadingPart};
     use std::str::FromStr;
     use test_case::test_case;
 

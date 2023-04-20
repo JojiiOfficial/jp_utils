@@ -2,7 +2,7 @@ use super::traits::AsReadingRef;
 
 /// A borrowed version of [`ReadingOwned`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ReadingRef<'a> {
     kana: &'a str,
     kanji: Option<&'a str>,
@@ -42,13 +42,13 @@ impl<'a> ReadingRef<'a> {
     /// Returns the readings kana reading
     #[inline]
     pub fn kana(&self) -> &str {
-        &self.kana
+        self.kana
     }
 }
 
 impl<'a> AsReadingRef for ReadingRef<'a> {
     #[inline]
-    fn as_reading_ref<'b>(&'b self) -> ReadingRef<'b> {
+    fn as_reading_ref(&self) -> ReadingRef {
         *self
     }
 }

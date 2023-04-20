@@ -1,17 +1,21 @@
 pub mod iter;
 pub mod reading;
 
-use crate::reading::r_owned::ReadingOwned;
+use crate::reading::Reading;
 
 use self::{
     iter::{IterItem, SeqIter},
-    reading::Reading,
+    reading::SReading,
 };
-use super::{as_part::AsPart, encode, reading_part::ReadingPart, reading_part_ref::ReadingPartRef};
 use std::{slice::Iter, str::FromStr};
 
+use super::{
+    parse::FuriParser,
+    part::{encode, AsPart, ReadingPart, ReadingPartRef},
+};
+
 /// Sequence of multiple furigana reading parts.
-#[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FuriSequence<T> {
     parts: Vec<T>,
@@ -59,8 +63,8 @@ where
 
     /// Returns the reading as kana
     #[inline]
-    pub fn kana_reading(&self) -> Reading<T> {
-        Reading::new(self, true)
+    pub fn kana_reading(&self) -> SReading<T> {
+        SReading::new(self, true)
     }
 
     /// Returns the whole sequence as kana string. Eg `[音楽|おん|がく]が[好|す]き` will return `おんがくがすき`
@@ -70,8 +74,8 @@ where
 
     /// Returns the reading as kanji
     #[inline]
-    pub fn kanji_reading(&self) -> Reading<T> {
-        Reading::new(self, false)
+    pub fn kanji_reading(&self) -> SReading<T> {
+        SReading::new(self, false)
     }
 
     /// Returns the whole sequence as kanji string. Eg `[音楽|おん|がく]が[好|す]き` will return `音楽が好き`
@@ -101,7 +105,7 @@ where
     /// ReadingParts.
     #[inline]
     pub fn flattened_iter(&self) -> impl Iterator<Item = ReadingPart> + '_ {
-        self.parts.iter().map(|i| i.reading_flattened()).flatten()
+        self.parts.iter().flat_map(|i| i.reading_flattened())
     }
 
     /// Converts the sequence into a Vec of its parts
@@ -123,15 +127,24 @@ where
     }
 
     /// Returns a ReadingOwned representing the reading of the sequence.
-    pub fn to_reading(&self) -> ReadingOwned {
+    #[deprecated = "WTF is this function?"]
+    pub fn to_reading(&self) -> Reading {
         if self.has_kanji() {
-            ReadingOwned::new_with_kanji(
+            Reading::new_with_kanji(
                 self.kana_reading().to_string(),
                 self.kanji_reading().to_string(),
             )
         } else {
-            ReadingOwned::new(self.kana_reading().to_string())
+            Reading::new(self.kana_reading().to_string())
         }
+    }
+}
+
+impl<'a> FuriSequence<ReadingPartRef<'a>> {
+    /// Parse a referencd FuriSequence from a `str`
+    #[inline]
+    pub fn parse_ref(s: &'a str) -> Result<FuriSequence<ReadingPartRef<'a>>, ()> {
+        FuriParser::new(s).collect()
     }
 }
 
@@ -147,7 +160,9 @@ impl FromStr for FuriSequence<ReadingPart> {
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(super::parse::parse_seq(s)?)
+        FuriParser::new(s)
+            .map(|i| i.map(|i| i.to_owned()))
+            .collect::<Result<_, _>>()
     }
 }
 
@@ -213,97 +228,15 @@ where
     }
 }
 
-#[cfg(feature = "serde")]
-impl<T> serde::Serialize for FuriSequence<T>
-where
-    T: AsPart,
-{
-    #[inline]
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(&self.encode())
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de> serde::Deserialize<'de> for FuriSequence<ReadingPart> {
-    #[inline]
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        deserializer.deserialize_string(RPDeser)
-    }
-}
-
-#[cfg(feature = "serde")]
-struct RPDeser;
-
-#[cfg(feature = "serde")]
-impl<'de> serde::de::Visitor<'de> for RPDeser {
-    type Value = FuriSequence<ReadingPart>;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "Expected string in furigana format!")
-    }
-
-    #[inline]
-    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        let furi = super::parse::parse_seq(v)
-            .map_err(|_| serde::de::Error::custom("Invalid Furigana format"))?;
-        Ok(furi)
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'a, 'de: 'a> serde::Deserialize<'de> for FuriSequence<ReadingPartRef<'a>> {
-    #[inline]
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        deserializer.deserialize_string(RPDeserRef)
-    }
-}
-
-#[cfg(feature = "serde")]
-struct RPDeserRef;
-
-#[cfg(feature = "serde")]
-impl<'de> serde::de::Visitor<'de> for RPDeserRef {
-    type Value = FuriSequence<ReadingPartRef<'de>>;
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "Expected string in furigana format!")
-    }
-
-    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>
-    where
-        E: serde::de::Error,
-    {
-        let furi = super::parse::parse_seq_ref(v)
-            .map_err(|_| serde::de::Error::custom("Invalid Furigana format"))?;
-        Ok(furi)
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::furigana::{
-        parse::parse_seq_ref, reading_part::ReadingPart, reading_part_ref::ReadingPartRef,
-        seq::FuriSequence,
-    };
+    use super::*;
     use test_case::test_case;
 
     #[test_case("[音楽|おん|がく]が[好|す]き", "おんがくがすき"; "seq_to_kana1")]
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]","はいきんしゅぎはもんだいはいきんしゅぎはもんだいはいきんしゅぎはもんだい"; "seq_to_kana2")]
     fn test_to_kana(furi: &str, expc: &str) {
-        let seq = parse_seq_ref(furi).unwrap();
+        let seq = FuriSequence::parse_ref(furi).unwrap();
         let kana = seq.as_kana();
         assert_eq!(kana, expc);
     }
@@ -311,7 +244,7 @@ mod tests {
     #[test_case("[音楽|おん|がく]が[好|す]き", "音楽が好き"; "seq_to_kanji1")]
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]","拝金主義は問題拝金主義は問題拝金主義は問題"; "seq_to_kanji2")]
     fn test_to_kanji(furi: &str, expc: &str) {
-        let seq = parse_seq_ref(furi).unwrap();
+        let seq = FuriSequence::parse_ref(furi).unwrap();
         let kana = seq.as_kanji();
         assert_eq!(kana, expc);
     }
@@ -319,7 +252,7 @@ mod tests {
     #[test_case("[音楽|おんがく]が[好|す]き", vec![("音楽",Some("おんがく")), ("が",None), ("好", Some("す")), ("き",None)]; "seq_to_kanji1")]
     #[test_case("[音楽|おん|がく]が[好|す]き", vec![("音楽",vec!["おん","がく"]), ("が",vec![]), ("好", vec!["す"]), ("き",vec![])]; "seq_to_kanji2")]
     fn test_iter(furi: &str, parts: Vec<impl Into<ReadingPart>>) {
-        let seq = parse_seq_ref(furi).unwrap();
+        let seq = FuriSequence::parse_ref(furi).unwrap();
         for (s_item, exp_item) in (&seq).into_iter().zip(parts.into_iter()) {
             let exp_item = exp_item.into();
             assert_eq!(&*s_item, exp_item);
@@ -329,7 +262,7 @@ mod tests {
     #[test_case("[音楽|おんがく]が[好|す]き"; "serde1")]
     #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]"; "serde2")]
     fn test_serde(furi: &str) {
-        let seq = parse_seq_ref(furi).unwrap();
+        let seq = FuriSequence::parse_ref(furi).unwrap();
         let json = serde_json::to_string(&seq).unwrap();
         let parsed: FuriSequence<ReadingPart> = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed, seq.to_owned());

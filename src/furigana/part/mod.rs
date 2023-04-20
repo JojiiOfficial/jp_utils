@@ -1,4 +1,15 @@
-use super::{as_part::AsPart, reading_part_ref::ReadingPartRef};
+pub mod as_part;
+pub mod encode;
+pub mod iter;
+mod p_ref;
+
+pub use as_part::AsPart;
+pub use iter::{
+    flatten::{FlattenIter, FlattenKajiIter},
+    ReadingIter,
+};
+pub use p_ref::ReadingPartRef;
+
 use std::str::FromStr;
 
 /// Represents a single part of a reading that can either be a kana only reading or a kanji reading
@@ -41,7 +52,7 @@ impl ReadingPart {
     #[inline]
     pub fn from_str_unchecked(s: &str) -> ReadingPart {
         // TODO: find a better way to do this
-        ReadingPartRef::from_str(s).to_owned()
+        ReadingPartRef::from_str_unchecked(s).to_owned()
     }
 }
 
@@ -89,7 +100,7 @@ impl AsPart for ReadingPart {
 
     /// Returns the kana reading
     #[inline]
-    fn as_kana<'a>(&'a self) -> Option<&'a String> {
+    fn as_kana(&self) -> Option<&String> {
         match self {
             ReadingPart::Kana(k) => Some(k),
             ReadingPart::Kanji { .. } => None,
@@ -106,7 +117,7 @@ impl AsPart for ReadingPart {
 
     /// Returns the kanji reading if exists
     #[inline]
-    fn as_kanji<'a>(&'a self) -> Option<&'a String> {
+    fn as_kanji(&self) -> Option<&String> {
         match self {
             ReadingPart::Kana(_) => None,
             ReadingPart::Kanji { kanji, readings: _ } => Some(kanji),

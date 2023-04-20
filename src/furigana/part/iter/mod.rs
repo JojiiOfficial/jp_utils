@@ -1,3 +1,5 @@
+pub mod flatten;
+
 use super::as_part::AsPart;
 
 /// Iterator over all readings of a `ReadingPartRef`
@@ -51,9 +53,9 @@ where
             return None;
         }
 
-        let item = readings.get(self.pos).and_then(|r| {
+        let item = readings.get(self.pos).map(|r| {
             let k = kanji.chars().nth(self.pos).unwrap();
-            Some((k.to_string(), Some(r.as_ref().to_string())))
+            (k.to_string(), Some(r.as_ref().to_string()))
         })?;
 
         self.pos += 1;
@@ -65,7 +67,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::furigana::reading_part_ref::ReadingPartRef;
+    use crate::furigana::part::p_ref::ReadingPartRef;
     use test_case::test_case;
 
     #[test_case("[音楽|おん|がく]", &[("音", Some("おん")), ("楽", Some("がく"))]; "Normal Part")]
@@ -74,7 +76,7 @@ mod tests {
     #[test_case("", &[]; "Empty")]
     #[test_case("[音楽|お|ん|がく]", &[("音楽", Some("おんがく"))]; "Malformed kanji")]
     fn test_reading_iter(part: &str, expected: &[(&str, Option<&str>)]) {
-        let part = ReadingPartRef::from_str(part);
+        let part = ReadingPartRef::from_str_unchecked(part);
         let iter = ReadingIter::new(&part);
         for (got, expect) in iter.zip(expected) {
             assert_eq!(got.0, expect.0);

@@ -1,5 +1,5 @@
 use super::FuriSequence;
-use crate::furigana::as_part::AsPart;
+use crate::furigana::part::AsPart;
 use std::ops::Deref;
 
 /// Iterator over furigana sequences
@@ -38,13 +38,13 @@ impl<'s, T> Deref for IterItem<'s, T> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0
     }
 }
 
 impl<'s, T> AsRef<T> for IterItem<'s, T> {
     #[inline]
     fn as_ref(&self) -> &T {
-        &self.0
+        self.0
     }
 }

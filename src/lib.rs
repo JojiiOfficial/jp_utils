@@ -1,3 +1,5 @@
+#![allow(clippy::result_unit_err)]
+
 #[cfg(feature = "hiragana")]
 pub mod hiragana;
 
