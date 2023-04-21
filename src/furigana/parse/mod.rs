@@ -36,6 +36,17 @@ impl<'a> FuriParser<'a> {
         let r = s.as_ref();
         FuriParser::new(r).all(|i| i.is_ok())
     }
+
+    /// Parses the furigana to a vec of segments.
+    pub fn to_vec(self) -> Result<Vec<SegmentRef<'a>>, ()> {
+        self.collect()
+    }
+
+    /// Parses the furigana to a vec of segments without checking the input for valid furigana
+    /// format.
+    pub fn to_vec_unchecked(self) -> Vec<SegmentRef<'a>> {
+        self.map(|i| i.unwrap()).collect()
+    }
 }
 
 impl<'a> Iterator for FuriParser<'a> {
