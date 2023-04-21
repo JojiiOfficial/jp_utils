@@ -127,7 +127,6 @@ where
     }
 
     /// Returns a ReadingOwned representing the reading of the sequence.
-    #[deprecated = "WTF is this function?"]
     pub fn to_reading(&self) -> Reading {
         if self.has_kanji() {
             Reading::new_with_kanji(

@@ -3,6 +3,7 @@ mod gen;
 pub mod reading;
 
 use super::segment::SegmentRef;
+use crate::reading::Reading;
 use gen::FuriParserGen;
 
 /// Iterator over encoded furigana which returns ReadingPartRef's of all parts.
@@ -38,14 +39,48 @@ impl<'a> FuriParser<'a> {
     }
 
     /// Parses the furigana to a vec of segments.
+    #[inline]
     pub fn to_vec(self) -> Result<Vec<SegmentRef<'a>>, ()> {
         self.collect()
     }
 
     /// Parses the furigana to a vec of segments without checking the input for valid furigana
     /// format.
+    #[inline]
     pub fn to_vec_unchecked(self) -> Vec<SegmentRef<'a>> {
-        self.map(|i| i.unwrap()).collect()
+        self.unchecked().map(|i| i.unwrap()).collect()
+    }
+
+    /// Parses a string to a [`Reading`]
+    pub fn to_reading(self) -> Result<Reading, ()> {
+        let mut kana = String::new();
+        let mut kanji = String::new();
+        let mut has_kanji = false;
+
+        for i in self {
+            let i = i?;
+            match i {
+                SegmentRef::Kana(k) => {
+                    kana.push_str(k);
+                    if has_kanji {
+                        kanji.push_str(k);
+                    }
+                }
+                SegmentRef::Kanji { kanji: k, readings } => {
+                    if !has_kanji {
+                        // lazy initialize kanji reading
+                        kanji = kana.clone();
+                    }
+                    has_kanji = true;
+                    kanji.push_str(k);
+                    for r in readings {
+                        kana.push_str(r);
+                    }
+                }
+            }
+        }
+        let kanji = has_kanji.then_some(kanji);
+        Ok(Reading::new_raw(kana, kanji))
     }
 }
 
@@ -62,6 +97,7 @@ impl<'a> Iterator for FuriParser<'a> {
 mod test {
     use super::*;
     use crate::furigana::segment::{encode, AsSegment, Segment};
+    use crate::furigana::seq::FuriSequence;
     use std::fs::File;
     use std::io::{BufRead, BufReader};
     use std::str::FromStr;
@@ -93,6 +129,20 @@ mod test {
     fn test_parse_furigana_error(furi: &str) {
         let parsed = FuriParser::new(furi).collect::<Result<Vec<_>, _>>();
         assert_eq!(parsed, Err(()));
+    }
+
+    #[test_case("おんがくが[好|す]"; "End_kanji")]
+    #[test_case("おんがくが[好|す]きです")]
+    #[test_case("[音楽|おん|がく]が[好|す]き")]
+    #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい][拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]")]
+    #[test_case("[楽|たの]しい")]
+    #[test_case("[音楽おん|がく]が[好す")]
+    #[test_case("この[人|ひと]が[嫌|きら]いです。")]
+    #[test_case("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。"; "with brackets")]
+    fn test_to_reading(furi: &str) {
+        let reading = FuriParser::new(furi).to_reading().unwrap();
+        let exp = FuriSequence::parse_ref(furi).unwrap().to_reading();
+        assert_eq!(reading, exp);
     }
 
     #[test]
