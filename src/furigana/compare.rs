@@ -1,4 +1,4 @@
-use super::{part::AsPart, seq::FuriSequence};
+use super::{segment::AsSegment, seq::FuriSequence};
 
 /// Comparator for furigana blocks
 pub struct FuriComparator {
@@ -14,7 +14,7 @@ impl FuriComparator {
     }
 
     /// Check if two FuriSequences are equal
-    pub fn eq_seq<L: AsPart, R: AsPart>(
+    pub fn eq_seq<L: AsSegment, R: AsSegment>(
         &self,
         left: &FuriSequence<L>,
         right: &FuriSequence<R>,
@@ -26,7 +26,7 @@ impl FuriComparator {
         }
     }
 
-    pub fn eq<L: AsPart, R: AsPart>(&self, left: &L, right: &R) -> bool {
+    pub fn eq<L: AsSegment, R: AsSegment>(&self, left: &L, right: &R) -> bool {
         if self.lit_match {
             left.as_kanji().map(|i| i.as_ref()) == right.as_kanji().map(|i| i.as_ref())
                 && left.as_kana().map(|i| i.as_ref()) == right.as_kana().map(|i| i.as_ref())
@@ -37,7 +37,7 @@ impl FuriComparator {
     }
 
     #[inline]
-    fn eq_seq_no_lit_match<L: AsPart, R: AsPart>(
+    fn eq_seq_no_lit_match<L: AsSegment, R: AsSegment>(
         &self,
         left: &FuriSequence<L>,
         right: &FuriSequence<R>,
@@ -45,19 +45,11 @@ impl FuriComparator {
         left.as_kana() == right.as_kana() && left.as_kanji() == right.as_kanji()
     }
 
-    fn eq_seq_lit_match<L: AsPart, R: AsPart>(
+    fn eq_seq_lit_match<L: AsSegment, R: AsSegment>(
         &self,
         left: &FuriSequence<L>,
         right: &FuriSequence<R>,
     ) -> bool {
-        /* let l_iter = left.flattened_iter();
-        let r_iter = right.flattened_iter();
-        for (l, r) in l_iter.zip(r_iter) {
-            if l != r {
-                return false;
-            }
-        }
-        true */
         let mut l_iter = left.iter().flat_map(|i| i.reading_iter());
         let mut r_iter = right.iter().flat_map(|i| i.reading_iter());
         loop {

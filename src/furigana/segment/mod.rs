@@ -1,32 +1,33 @@
-pub mod as_part;
+pub mod as_segment;
 pub mod encode;
 pub mod iter;
-mod p_ref;
+mod seg_ref;
 
-pub use as_part::AsPart;
+pub use as_segment::AsSegment;
 pub use iter::{
     flatten::{FlattenIter, FlattenKajiIter},
     ReadingIter,
 };
-pub use p_ref::ReadingPartRef;
+pub use seg_ref::SegmentRef;
 
 use std::str::FromStr;
+use tinyvec::{tiny_vec, TinyVec};
 
-/// Represents a single part of a reading that can either be a kana only reading or a kanji reading
-/// with a kana part that describes the kanjis reading
+/// Represents a single segment of a furigana string. This can be a kana or kanji segment. Kanji
+/// segments also save the assigned kana readings.
 #[derive(Clone, PartialEq, Debug, Eq, Hash)]
-pub enum ReadingPart {
+pub enum Segment {
     // Kana reading
     Kana(String),
 
     // Kanji reading with assigned kana readings
     Kanji {
         kanji: String,
-        readings: Vec<String>,
+        readings: TinyVec<[String; 1]>,
     },
 }
 
-impl ReadingPart {
+impl Segment {
     /// Create a new `SentencePart` with kana only
     #[inline]
     pub fn new_kana(kana: String) -> Self {
@@ -38,42 +39,42 @@ impl ReadingPart {
     pub fn new_kanji(kanji: String, kana: String) -> Self {
         Self::Kanji {
             kanji,
-            readings: vec![kana],
+            readings: tiny_vec!([String; 1] => kana),
         }
     }
 
     /// Returns the reading part as a reference
     #[inline]
-    pub fn as_ref_part(&self) -> ReadingPartRef {
+    pub fn as_ref_part(&self) -> SegmentRef {
         self.into()
     }
 
     /// Parses a ReadingPart from string
     #[inline]
-    pub fn from_str_unchecked(s: &str) -> ReadingPart {
+    pub fn from_str_unchecked(s: &str) -> Segment {
         // TODO: find a better way to do this
-        ReadingPartRef::from_str_unchecked(s).to_owned()
+        SegmentRef::from_str_unchecked(s).to_owned()
     }
 }
 
-impl FromStr for ReadingPart {
+impl FromStr for Segment {
     type Err = ();
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // TODO: find a better way to do this
-        ReadingPartRef::from_str_checked(s).map(|i| i.to_owned())
+        SegmentRef::from_str_checked(s).map(|i| i.to_owned())
     }
 }
 
-impl ToString for ReadingPart {
+impl ToString for Segment {
     #[inline]
     fn to_string(&self) -> String {
         self.encode()
     }
 }
 
-impl AsPart for ReadingPart {
+impl AsSegment for Segment {
     type StrType = String;
 
     /// Returns `true` if SentencePart is empty. Since every part has at least to hold kana data
@@ -81,8 +82,8 @@ impl AsPart for ReadingPart {
     #[inline]
     fn is_empty(&self) -> bool {
         match self {
-            ReadingPart::Kana(k) => k.is_empty(),
-            ReadingPart::Kanji { kanji, readings } => readings.is_empty() || kanji.is_empty(),
+            Segment::Kana(k) => k.is_empty(),
+            Segment::Kanji { kanji, readings } => readings.is_empty() || kanji.is_empty(),
         }
     }
 
@@ -102,16 +103,16 @@ impl AsPart for ReadingPart {
     #[inline]
     fn as_kana(&self) -> Option<&String> {
         match self {
-            ReadingPart::Kana(k) => Some(k),
-            ReadingPart::Kanji { .. } => None,
+            Segment::Kana(k) => Some(k),
+            Segment::Kanji { .. } => None,
         }
     }
 
     #[inline]
     fn kana_reading(&self) -> String {
         match self {
-            ReadingPart::Kana(k) => k.to_string(),
-            ReadingPart::Kanji { kanji: _, readings } => readings.join(""),
+            Segment::Kana(k) => k.to_string(),
+            Segment::Kanji { kanji: _, readings } => readings.join(""),
         }
     }
 
@@ -119,61 +120,61 @@ impl AsPart for ReadingPart {
     #[inline]
     fn as_kanji(&self) -> Option<&String> {
         match self {
-            ReadingPart::Kana(_) => None,
-            ReadingPart::Kanji { kanji, readings: _ } => Some(kanji),
+            Segment::Kana(_) => None,
+            Segment::Kanji { kanji, readings: _ } => Some(kanji),
         }
     }
 
     /// Returns the kanji readings
     #[inline]
-    fn readings(&self) -> Option<&Vec<String>> {
+    fn readings(&self) -> Option<&TinyVec<[Self::StrType; 1]>> {
         match self {
-            ReadingPart::Kana(_) => None,
-            ReadingPart::Kanji { kanji: _, readings } => Some(readings),
+            Segment::Kana(_) => None,
+            Segment::Kanji { kanji: _, readings } => Some(readings),
         }
     }
 
     /// Sets the kanji reading or converts it to one
     fn set_kanji(&mut self, new_kanji: String) {
         match self {
-            ReadingPart::Kana(k) => {
+            Segment::Kana(k) => {
                 let kana = std::mem::take(k);
                 *self = Self::new_kanji(new_kanji, kana);
             }
-            ReadingPart::Kanji { kanji, readings: _ } => *kanji = new_kanji,
+            Segment::Kanji { kanji, readings: _ } => *kanji = new_kanji,
         }
     }
 
     #[inline]
     fn set_kana(&mut self, s: String) {
-        if let ReadingPart::Kana(k) = self {
+        if let Segment::Kana(k) = self {
             *k = s
         }
     }
 
     #[inline]
     fn add_reading(&mut self, r: String) {
-        if let ReadingPart::Kanji { kanji: _, readings } = self {
+        if let Segment::Kanji { kanji: _, readings } = self {
             readings.push(r);
         }
     }
 }
 
-impl From<String> for ReadingPart {
+impl From<String> for Segment {
     #[inline]
     fn from(s: String) -> Self {
         Self::new_kana(s)
     }
 }
 
-impl From<(String, String)> for ReadingPart {
+impl From<(String, String)> for Segment {
     #[inline]
     fn from(s: (String, String)) -> Self {
         Self::new_kanji(s.0, s.1)
     }
 }
 
-impl<S> From<(S, Vec<S>)> for ReadingPart
+impl<S> From<(S, Vec<S>)> for Segment
 where
     S: AsRef<str>,
 {
@@ -191,7 +192,7 @@ where
     }
 }
 
-impl From<(String, Option<String>)> for ReadingPart {
+impl From<(String, Option<String>)> for Segment {
     #[inline]
     fn from(s: (String, Option<String>)) -> Self {
         if let Some(kanji) = s.1 {
@@ -202,21 +203,21 @@ impl From<(String, Option<String>)> for ReadingPart {
     }
 }
 
-impl From<&str> for ReadingPart {
+impl From<&str> for Segment {
     #[inline]
     fn from(s: &str) -> Self {
         Self::new_kana(s.to_string())
     }
 }
 
-impl From<(&str, &str)> for ReadingPart {
+impl From<(&str, &str)> for Segment {
     #[inline]
     fn from(s: (&str, &str)) -> Self {
         Self::new_kanji(s.0.to_string(), s.1.to_string())
     }
 }
 
-impl From<(&str, Option<&str>)> for ReadingPart {
+impl From<(&str, Option<&str>)> for Segment {
     #[inline]
     fn from(s: (&str, Option<&str>)) -> Self {
         if let Some(kanji) = s.1 {
@@ -227,47 +228,48 @@ impl From<(&str, Option<&str>)> for ReadingPart {
     }
 }
 
-impl<'a> PartialEq<ReadingPartRef<'a>> for ReadingPart {
-    fn eq(&self, other: &ReadingPartRef) -> bool {
+impl<'a> PartialEq<SegmentRef<'a>> for Segment {
+    fn eq(&self, other: &SegmentRef) -> bool {
         match (self, other) {
-            (ReadingPart::Kana(s_kana), ReadingPartRef::Kana(o_kana)) => s_kana == o_kana,
+            (Segment::Kana(s_kana), SegmentRef::Kana(o_kana)) => s_kana == o_kana,
             (
-                ReadingPart::Kana(_),
-                ReadingPartRef::Kanji {
+                Segment::Kana(_),
+                SegmentRef::Kanji {
                     kanji: _,
                     readings: _,
                 },
             )
             | (
-                ReadingPart::Kanji {
+                Segment::Kanji {
                     kanji: _,
                     readings: _,
                 },
-                ReadingPartRef::Kana(_),
+                SegmentRef::Kana(_),
             ) => false,
             (
-                ReadingPart::Kanji {
+                Segment::Kanji {
                     kanji: self_k,
                     readings: self_r,
                 },
-                ReadingPartRef::Kanji {
+                SegmentRef::Kanji {
                     kanji: other_k,
                     readings: other_r,
                 },
-            ) => self_k == other_k && self_r == other_r,
+                // ) => self_k == other_k && self_r == other_r,
+            ) => self_k == other_k && self_r.iter().zip(other_r.iter()).all(|i| i.0 == i.1),
         }
     }
 }
 
-impl<'a> PartialEq<ReadingPartRef<'a>> for &ReadingPart {
+impl<'a> PartialEq<SegmentRef<'a>> for &Segment {
     #[inline]
-    fn eq(&self, other: &ReadingPartRef) -> bool {
+    fn eq(&self, other: &SegmentRef) -> bool {
         (*self).eq(other)
     }
 }
 
 #[cfg(feature = "serde")]
-impl serde::Serialize for ReadingPart {
+impl serde::Serialize for Segment {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -278,7 +280,7 @@ impl serde::Serialize for ReadingPart {
 }
 
 #[cfg(feature = "serde")]
-impl<'a, 'de: 'a> serde::Deserialize<'de> for ReadingPart {
+impl<'a, 'de: 'a> serde::Deserialize<'de> for Segment {
     #[inline]
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -293,7 +295,7 @@ struct RpDeser;
 
 #[cfg(feature = "serde")]
 impl<'de> serde::de::Visitor<'de> for RpDeser {
-    type Value = ReadingPart;
+    type Value = Segment;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(formatter, "Expected string in furigana format!")
@@ -304,6 +306,6 @@ impl<'de> serde::de::Visitor<'de> for RpDeser {
     where
         E: serde::de::Error,
     {
-        Ok(ReadingPart::from_str(v).unwrap())
+        Ok(Segment::from_str(v).unwrap())
     }
 }

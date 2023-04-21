@@ -1,10 +1,11 @@
 use super::{encode, FlattenIter, ReadingIter};
 use crate::reading::Reading;
 use itertools::Itertools;
+use tinyvec::TinyVec;
 
 /// Trait defining common behavior for ReadingParts
-pub trait AsPart {
-    type StrType: AsRef<str>;
+pub trait AsSegment {
+    type StrType: AsRef<str> + Default;
 
     /// Returns `true` if SentencePart is empty. Since every part has at least to hold kana data
     /// `empty` is already the case if the kana reading is empmty
@@ -27,7 +28,7 @@ pub trait AsPart {
     fn kana_reading(&self) -> String;
 
     /// Returns the kanji readings
-    fn readings(&self) -> Option<&Vec<Self::StrType>>;
+    fn readings(&self) -> Option<&TinyVec<[Self::StrType; 1]>>;
 
     /// Returns a list of kanjis assigned to their readings.
     fn literal_readings(&self) -> Option<Vec<(String, String)>> {
@@ -126,9 +127,9 @@ pub trait AsPart {
 
 #[cfg(test)]
 mod test {
-    use crate::furigana::part::ReadingPart;
+    use crate::furigana::segment::Segment;
 
-    use super::AsPart;
+    use super::AsSegment;
     use test_case::test_case;
 
     #[test_case(("私", vec!["わたし"]), "[私|わたし]"; "Kanji")]
@@ -136,7 +137,7 @@ mod test {
     #[test_case("ハ", "ハ"; "SingleKatakana")]
     #[test_case(("音楽", vec!["おん","がく"]), "[音楽|おん|がく]"; "MultipleKanji")]
     #[test_case(("大学生", vec!["だい","がくせい"]), "[大学生|だいがくせい]"; "Malformed kanji readings")]
-    fn test_encode(part: impl Into<ReadingPart>, exp: &str) {
+    fn test_encode(part: impl Into<Segment>, exp: &str) {
         assert_eq!(part.into().encode(), exp);
     }
 }

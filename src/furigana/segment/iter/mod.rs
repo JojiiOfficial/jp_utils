@@ -1,6 +1,6 @@
 pub mod flatten;
 
-use super::as_part::AsPart;
+use super::as_segment::AsSegment;
 
 /// Iterator over all readings of a `ReadingPartRef`
 pub struct ReadingIter<'a, P> {
@@ -11,7 +11,7 @@ pub struct ReadingIter<'a, P> {
 
 impl<'a, P> ReadingIter<'a, P>
 where
-    P: AsPart,
+    P: AsSegment,
 {
     #[inline]
     pub fn new(part: &'a P) -> Self {
@@ -27,7 +27,7 @@ where
 
 impl<'a, P> Iterator for ReadingIter<'a, P>
 where
-    P: AsPart,
+    P: AsSegment,
 {
     type Item = (String, Option<String>);
 
@@ -67,7 +67,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::furigana::part::p_ref::ReadingPartRef;
+    use crate::furigana::segment::seg_ref::SegmentRef;
     use test_case::test_case;
 
     #[test_case("[音楽|おん|がく]", &[("音", Some("おん")), ("楽", Some("がく"))]; "Normal Part")]
@@ -76,7 +76,7 @@ mod tests {
     #[test_case("", &[]; "Empty")]
     #[test_case("[音楽|お|ん|がく]", &[("音楽", Some("おんがく"))]; "Malformed kanji")]
     fn test_reading_iter(part: &str, expected: &[(&str, Option<&str>)]) {
-        let part = ReadingPartRef::from_str_unchecked(part);
+        let part = SegmentRef::from_str_unchecked(part);
         let iter = ReadingIter::new(&part);
         for (got, expect) in iter.zip(expected) {
             assert_eq!(got.0, expect.0);

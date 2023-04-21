@@ -1,4 +1,4 @@
-use super::AsPart;
+use super::AsSegment;
 use itertools::Itertools;
 
 /// Encodes a reading. Returns a kanji block if `kanji` is Some() and `kana` as owned if not.
@@ -34,7 +34,7 @@ where
 pub fn sequence<'a, I, P>(iter: I) -> String
 where
     I: IntoIterator<Item = &'a P>,
-    P: AsPart + 'a,
+    P: AsSegment + 'a,
 {
     iter.into_iter().map(|i| i.encode()).join("")
 }

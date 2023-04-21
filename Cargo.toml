@@ -11,6 +11,7 @@ license = "AGPL-3.0"
 [dependencies]
 itertools = {version = "0.10.5", optional = true}
 serde = { version = "1.0.160", features = ['derive'], optional = true }
+tinyvec = { version = "1.6.0", features = ["alloc"] }
 
 [dev-dependencies]
 test-case = "3.1.0"
@@ -20,6 +21,7 @@ serde_json = "1.0.96"
 
 [features]
 default = ["furigana", "serde"]
+full = ["furigana","serde","hiragana"]
 hiragana = []
 furigana = ["itertools"]
 

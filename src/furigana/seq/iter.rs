@@ -1,5 +1,5 @@
 use super::FuriSequence;
-use crate::furigana::part::AsPart;
+use crate::furigana::segment::AsSegment;
 use std::ops::Deref;
 
 /// Iterator over furigana sequences
@@ -10,7 +10,7 @@ pub struct SeqIter<'s, T> {
 
 impl<'s, T> SeqIter<'s, T>
 where
-    T: AsPart,
+    T: AsSegment,
 {
     #[inline]
     pub fn new(seq: &'s FuriSequence<T>) -> Self {

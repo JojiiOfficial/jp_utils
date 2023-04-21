@@ -6,7 +6,7 @@ pub use r_ref::ReadingRef;
 use self::traits::AsReadingRef;
 
 #[cfg(feature = "furigana")]
-use crate::furigana::{part::AsPart, part::ReadingPart, seq::FuriSequence};
+use crate::furigana::{segment::AsSegment, segment::Segment, seq::FuriSequence};
 
 /// Represents a Japanese 'reading' which always consists of a kana reading and sometimes an
 /// equivalent way to write that word with kanji. This is an owned variant. For a borrowed variant
@@ -64,9 +64,9 @@ impl AsReadingRef for Reading {
 }
 
 #[cfg(feature = "furigana")]
-impl From<&FuriSequence<ReadingPart>> for Reading {
+impl From<&FuriSequence<Segment>> for Reading {
     #[inline]
-    fn from(value: &FuriSequence<ReadingPart>) -> Self {
+    fn from(value: &FuriSequence<Segment>) -> Self {
         let kana = value.kana_reading().to_string();
         let kanji = value.has_kanji().then(|| value.kanji_reading().to_string());
         Self { kana, kanji }
@@ -74,9 +74,9 @@ impl From<&FuriSequence<ReadingPart>> for Reading {
 }
 
 #[cfg(feature = "furigana")]
-impl From<FuriSequence<ReadingPart>> for Reading {
+impl From<FuriSequence<Segment>> for Reading {
     #[inline]
-    fn from(value: FuriSequence<ReadingPart>) -> Self {
+    fn from(value: FuriSequence<Segment>) -> Self {
         let kana = value.kana_reading().to_string();
         let kanji = value.has_kanji().then(|| value.kanji_reading().to_string());
         Self { kana, kanji }
@@ -86,7 +86,7 @@ impl From<FuriSequence<ReadingPart>> for Reading {
 #[cfg(feature = "furigana")]
 impl<A> From<A> for Reading
 where
-    A: AsPart,
+    A: AsSegment,
 {
     #[inline]
     fn from(value: A) -> Self {

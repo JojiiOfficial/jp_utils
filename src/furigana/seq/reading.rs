@@ -1,5 +1,5 @@
 use super::FuriSequence;
-use crate::furigana::part::AsPart;
+use crate::furigana::segment::AsSegment;
 
 /// A `reading` view over `FuriSequence` that targets a given reading (kanji or kana) of the
 /// furigana sequence
@@ -10,7 +10,7 @@ pub struct SReading<'a, T> {
 
 impl<'a, T> SReading<'a, T>
 where
-    T: AsPart,
+    T: AsSegment,
 {
     #[inline]
     pub fn new(r: &'a FuriSequence<T>, kana: bool) -> Self {
@@ -49,7 +49,7 @@ where
 
 impl<'a, T> ToString for SReading<'a, T>
 where
-    T: AsPart,
+    T: AsSegment,
 {
     fn to_string(&self) -> String {
         if self.kana {

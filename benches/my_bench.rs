@@ -11,6 +11,13 @@ fn index_item_decode(c: &mut Criterion) {
 
     let example2 = "[水|みず]、ガス、[電気|でん|き]が[遠|とお]くから[運|はこ]ばれて[我々|われわれ]の[要求|よう|きゅう]を[満|み]たすためになんなく[供給|きょう|きゅう]されているように、いつか[画像|が|ぞう]と[音楽|おん|がく]はちょっとした[合図|あい|ず]みたいなシンプルな[手|て]の[仕草|し|ぐさ]によって[提供|ていきょう]されることにもなります。";
 
+    c.bench_function("bench furi kanji len", |b| {
+        let furigana = Furigana::new_unchecked(example);
+        b.iter(|| {
+            let _ = furigana.kanji().len();
+        });
+    });
+
     c.bench_function("bench parse", |b| {
         b.iter(|| {
             let _ = FuriSequence::parse_ref(black_box(example));
@@ -57,7 +64,7 @@ fn index_item_decode(c: &mut Criterion) {
         let furi = Furigana::new_unchecked(example);
 
         b.iter(|| {
-            let _ = furi.kanji();
+            let _ = furi.kanji().to_string();
         });
     });
 
@@ -65,7 +72,7 @@ fn index_item_decode(c: &mut Criterion) {
         let furi = Furigana::new_unchecked(example);
 
         b.iter(|| {
-            let _ = furi.kana();
+            let _ = furi.kana().to_string();
         });
     });
 }

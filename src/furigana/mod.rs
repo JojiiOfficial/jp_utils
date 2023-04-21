@@ -2,21 +2,20 @@
 pub mod compare;
 /// Parses encoded furigana
 pub mod parse;
-/// Single parts of an furigana string.
-pub mod part;
+/// A single segment of an encoded furigana string.
+pub mod segment;
 /// Furigana sequence
 pub mod seq;
 
 use self::{
-    parse::FuriToReadingParser,
-    part::{AsPart, ReadingPart, ReadingPartRef},
+    parse::reading::FuriToReadingParser,
+    segment::{AsSegment, Segment, SegmentRef},
 };
 use parse::FuriParser;
 use std::fmt::Display;
 
 /// A struct that holds encoded furigana data in a string. Such an element can be created by directly wrapping around
-/// a [`String`] or using the `new()` function which has the benefit that the furigana
-/// gets validated.
+/// a [`String`] or using the `new()` function which has the benefit that the furigana gets validated.
 /// Valid encoded furigana looks like this: `[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]です。`
 #[derive(Clone, PartialEq, Eq, Hash, Default, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -38,17 +37,6 @@ impl Furigana {
         Self(furi.as_ref().to_string())
     }
 
-    /// Returns an Iterator over all parts of the furigana.
-    pub fn iter(&self) -> impl Iterator<Item = ReadingPartRef> {
-        FuriParser::new(self.raw()).unchecked().map(|i| i.unwrap())
-    }
-
-    /// Returns the amount of reading parts.
-    #[inline]
-    pub fn part_count(&self) -> usize {
-        self.iter().count()
-    }
-
     /// Returns `true` if the Furigana is empty.
     #[inline]
     pub fn is_empty(&self) -> bool {
@@ -61,47 +49,97 @@ impl Furigana {
         &self.0
     }
 
-    /// Push a part to the end of the furigana sequence.
-    #[inline]
-    pub fn push_part<T>(&mut self, part: T)
-    where
-        T: AsPart,
-    {
-        self.0.push_str(&part.encode());
-    }
-
-    /// Converts the sequence into a Vec of its parts
-    #[inline]
-    pub fn as_parts(&self) -> Vec<ReadingPart> {
-        self.iter().map(|i| i.to_owned()).collect()
-    }
-
-    /// Returns the part at `pos` or None if out of bounds.
-    #[inline]
-    pub fn part_at(&self, pos: usize) -> Option<ReadingPartRef> {
-        self.iter().nth(pos)
-    }
-
     /// Returns the kana reading of the Furigana.
-    pub fn kana(&self) -> String {
-        FuriToReadingParser::new(self.raw(), true).parse()
+    #[inline]
+    pub fn kana(&self) -> FuriToReadingParser {
+        FuriToReadingParser::new(self.raw(), true)
+    }
+
+    /// Returns the kana reading as string. If you want more customizability, use `kana()`.
+    #[inline]
+    pub fn kana_str(&self) -> String {
+        self.kana().to_string()
     }
 
     /// Returns the kanji reading of the Furigana.
-    pub fn kanji(&self) -> String {
-        FuriToReadingParser::new(self.raw(), false).parse()
+    #[inline]
+    pub fn kanji(&self) -> FuriToReadingParser {
+        FuriToReadingParser::new(self.raw(), false)
     }
 
-    /// Returns `true` if the Furigana has at least one kanji part.
+    /// Returns the kanji reading as string. If you want more customizability, use `kanji()`.
+    #[inline]
+    pub fn kanji_str(&self) -> String {
+        self.kanji().to_string()
+    }
+
+    /// Returns `true` if the Furigana has at least one kanji segment.
     #[inline]
     pub fn has_kanji(&self) -> bool {
-        self.iter().any(|i| i.is_kanji())
+        self.segments().any(|i| i.is_kanji())
     }
 
-    /// Converts the sequence into a Vec of its parts
+    /// Returns an Iterator over all segments of the furigana.
     #[inline]
-    pub fn as_parts_ref(&self) -> Vec<ReadingPartRef> {
-        self.iter().collect()
+    pub fn segments(&self) -> impl Iterator<Item = SegmentRef> {
+        FuriParser::new(self.raw()).unchecked().map(|i| i.unwrap())
+    }
+
+    /// Returns the amount of reading segments.
+    #[inline]
+    pub fn segment_count(&self) -> usize {
+        self.segments().count()
+    }
+
+    /// Pushes a strting to the furigana. Returns an error if `seg` is no valif furigana and can't
+    /// be pushed.
+    pub fn push_str<S>(&mut self, seg: S) -> Result<(), ()>
+    where
+        S: AsRef<str>,
+    {
+        let seg = seg.as_ref();
+        if !FuriParser::check(seg) {
+            return Err(());
+        }
+        self.0.push_str(seg);
+        Ok(())
+    }
+
+    /// Pushes a strting to the furigana without checking if `seg` is valid furigana. The caller
+    /// has to ensure that only valid furigana strings will be pushed.
+    #[inline]
+    pub fn push_str_unchecked<S>(&mut self, seg: S)
+    where
+        S: AsRef<str>,
+    {
+        self.0.push_str(seg.as_ref());
+    }
+
+    /// Pushes a segment to the end of the furigana sequence.
+    #[inline]
+    pub fn push_segment<T>(&mut self, seg: T)
+    where
+        T: AsSegment,
+    {
+        self.0.push_str(&seg.encode());
+    }
+
+    /// Converts the sequence into a Vec of its segments.
+    #[inline]
+    pub fn as_segments(&self) -> Vec<Segment> {
+        self.segments().map(|i| i.to_owned()).collect()
+    }
+
+    /// Returns the segment at `pos` or None if out of bounds.
+    #[inline]
+    pub fn segment_at(&self, pos: usize) -> Option<SegmentRef> {
+        self.segments().nth(pos)
+    }
+
+    /// Converts the sequence into a Vec of its segments.
+    #[inline]
+    pub fn as_segments_ref(&self) -> Vec<SegmentRef> {
+        self.segments().collect()
     }
 
     /// Returns the inner string of the furigana value.
@@ -111,17 +149,27 @@ impl Furigana {
     }
 }
 
-impl From<String> for Furigana {
+impl<S> From<S> for Furigana
+where
+    S: AsRef<str>,
+{
     #[inline]
-    fn from(value: String) -> Self {
-        Self(value)
+    fn from(value: S) -> Self {
+        Self(value.as_ref().to_string())
     }
 }
 
-impl From<Furigana> for Vec<ReadingPart> {
+impl Into<String> for Furigana {
+    #[inline]
+    fn into(self) -> String {
+        self.into_inner()
+    }
+}
+
+impl From<Furigana> for Vec<Segment> {
     #[inline]
     fn from(value: Furigana) -> Self {
-        value.as_parts()
+        value.as_segments()
     }
 }
 
@@ -134,10 +182,10 @@ impl<S: AsRef<str>> FromIterator<S> for Furigana {
     }
 }
 
-impl<T: AsPart> Extend<T> for Furigana {
+impl<T: AsSegment> Extend<T> for Furigana {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         for s in iter {
-            self.push_part(s);
+            self.push_segment(s);
         }
     }
 }
@@ -155,13 +203,16 @@ mod test {
     #[test]
     fn test_furigana() {
         let furi = Furigana::new_unchecked("[音楽|おん|がく]が[大好|だい|す]きです");
-        assert_eq!(furi.kanji(), "音楽が大好きです");
-        assert_eq!(furi.kana(), "おんがくがだいすきです");
+        assert_eq!(furi.kanji().to_string(), "音楽が大好きです");
+        assert_eq!(furi.kana().to_string(), "おんがくがだいすきです");
     }
 
     #[test]
     fn test_furigana2() {
         let furi = Furigana::new("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。").unwrap();
-        assert_eq!(furi.kanji(), "");
+        assert_eq!(
+            furi.kanji().to_string(),
+            "2x+1の定義域がA=[1,2]のとき、fの値域はf(A) = [3,5]となる。"
+        );
     }
 }
