@@ -70,8 +70,8 @@ impl<'a> FuriParser<'a> {
                     if !has_kanji {
                         // lazy initialize kanji reading
                         kanji = kana.clone();
+                        has_kanji = true;
                     }
-                    has_kanji = true;
                     kanji.push_str(k);
                     for r in readings {
                         kana.push_str(r);
