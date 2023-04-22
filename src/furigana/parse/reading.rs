@@ -62,6 +62,39 @@ impl<'a> FuriToReadingParser<'a> {
         buf
     }
 
+    /// Parses furigana to kanji and kana at the same time. If you need both kana and kanji, use
+    /// this function instead of calling parsing twice.
+    pub fn parse_kanji_and_kana(furi: &str) -> (String, Option<String>) {
+        let mut kana = String::with_capacity(furi.len());
+        let mut kanji = String::new();
+
+        let mut has_kanji = false;
+
+        for (txt, is_kanji) in FuriParserGen::new(furi) {
+            if is_kanji {
+                if !has_kanji {
+                    has_kanji = true;
+                    kanji = String::with_capacity(furi.len().saturating_sub(10));
+                    kanji.push_str(&kana);
+                }
+                let mut part = txt[1..txt.len() - 1].split('|');
+
+                // Safety
+                // split always returns at least one element
+                kanji.push_str(unsafe { &part.next().unwrap_unchecked() });
+
+                kana.extend(part);
+            } else {
+                kana.push_str(txt);
+                if has_kanji {
+                    kanji.push_str(txt);
+                }
+            }
+        }
+
+        (kana, has_kanji.then_some(kanji))
+    }
+
     /// Runs the parser and writes all sub strings into `w`.
     fn run<W>(&self, mut w: W)
     where

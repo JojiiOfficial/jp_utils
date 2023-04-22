@@ -5,6 +5,7 @@ pub use r_ref::ReadingRef;
 
 use self::traits::AsReadingRef;
 
+use crate::furigana::{parse::reading::FuriToReadingParser, Furigana};
 #[cfg(feature = "furigana")]
 use crate::furigana::{segment::AsSegment, segment::Segment, seq::FuriSequence};
 
@@ -84,6 +85,15 @@ impl From<&FuriSequence<Segment>> for Reading {
 }
 
 #[cfg(feature = "furigana")]
+impl<T: AsRef<str>> From<&Furigana<T>> for Reading {
+    #[inline]
+    fn from(value: &Furigana<T>) -> Self {
+        let (kana, kanji) = FuriToReadingParser::parse_kanji_and_kana(value.raw());
+        Self::new_raw(kana, kanji)
+    }
+}
+
+#[cfg(feature = "furigana")]
 impl From<FuriSequence<Segment>> for Reading {
     #[inline]
     fn from(value: FuriSequence<Segment>) -> Self {
@@ -96,7 +106,7 @@ impl From<FuriSequence<Segment>> for Reading {
 #[cfg(feature = "furigana")]
 impl<S: AsSegment> FromIterator<S> for Reading {
     fn from_iter<T: IntoIterator<Item = S>>(iter: T) -> Reading {
-        let mut kana = String::new();
+        let mut kana = String::with_capacity(20);
         let mut kanji = String::new();
         let mut has_kanji = false;
 

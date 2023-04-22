@@ -51,7 +51,8 @@ impl<'a> FuriParser<'a> {
         self.collect()
     }
 
-    /// Parses a string to a [`Reading`]
+    /// Parses a string to a [`Reading`]. This is slower than the unchecked version as it does
+    /// checks and allocates each segment before allocating the reading.
     #[inline]
     pub fn to_reading(self) -> Result<Reading, ()> {
         self.collect()
@@ -72,6 +73,7 @@ mod test {
     use super::*;
     use crate::furigana::segment::{encode, AsSegment, Segment};
     use crate::furigana::seq::FuriSequence;
+    use crate::furigana::Furigana;
     use std::fs::File;
     use std::io::{BufRead, BufReader};
     use std::str::FromStr;
@@ -90,6 +92,8 @@ mod test {
         let encoded = encode::sequence(&parsed);
         // assert_eq!(furi, encoded);
         assert_eq!(encoded, furi);
+        let seq = FuriSequence::from(parsed);
+        assert_eq!(Furigana(furi).to_reading(), seq.to_reading());
     }
 
     #[test_case("おんがくが[好|す]"; "End_kanji")]
@@ -104,6 +108,8 @@ mod test {
         let reading = FuriParser::new(furi).to_reading().unwrap();
         let exp = FuriSequence::parse_ref(furi).unwrap().to_reading();
         assert_eq!(reading, exp);
+        let furigana = Furigana(furi);
+        assert_eq!(furigana.to_reading(), reading);
     }
 
     #[test]
@@ -128,8 +134,12 @@ mod test {
                 println!("Error: {err:?} at line {:?}", line);
                 continue;
             }
-            let encoded = encode::sequence(&parsed.unwrap());
+            let parsed = parsed.unwrap();
+            let encoded = encode::sequence(&parsed);
             assert_eq!(encoded, line);
+
+            let seq = FuriSequence::from(parsed);
+            assert_eq!(seq.to_reading(), Furigana(line).to_reading());
         }
     }
 }

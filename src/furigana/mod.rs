@@ -92,7 +92,7 @@ where
     /// Returns a [`Reading`] of the furigana.
     #[inline]
     pub fn to_reading(&self) -> Reading {
-        self.segments().collect()
+        Reading::from(self)
     }
 
     /// Returns an Iterator over all segments of the furigana.

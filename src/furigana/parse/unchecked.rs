@@ -1,5 +1,6 @@
 use super::super::segment::SegmentRef;
 use super::gen::FuriParserGen;
+use super::reading::FuriToReadingParser;
 use crate::reading::Reading;
 
 /// Iterator over encoded furigana which returns ReadingPartRef's of all parts without checking for
@@ -24,7 +25,8 @@ impl<'a> UncheckedFuriParser<'a> {
     /// Parses a string to a [`Reading`].
     #[inline]
     pub fn to_reading(self) -> Reading {
-        self.collect()
+        let (kana, kanji) = FuriToReadingParser::parse_kanji_and_kana(self.gen_parser.str);
+        Reading::new_raw(kana, kanji)
     }
 
     /// Parses a single string segment.

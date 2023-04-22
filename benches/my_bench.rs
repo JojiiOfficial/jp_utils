@@ -11,8 +11,30 @@ fn index_item_decode(c: &mut Criterion) {
 
     let example2 = "[水|みず]、ガス、[電気|でん|き]が[遠|とお]くから[運|はこ]ばれて[我々|われわれ]の[要求|よう|きゅう]を[満|み]たすためになんなく[供給|きょう|きゅう]されているように、いつか[画像|が|ぞう]と[音楽|おん|がく]はちょっとした[合図|あい|ず]みたいなシンプルな[手|て]の[仕草|し|ぐさ]によって[提供|ていきょう]されることにもなります。";
 
+    c.bench_function("parse to kanji and kana", |b| {
+        let furigana = Furigana::new_unchecked(black_box(example));
+        b.iter(|| {
+            let _ = furigana.kana_str();
+            let _ = furigana.kanji_str();
+        });
+    });
+
+    c.bench_function("parse to reading", |b| {
+        let furigana = Furigana::new_unchecked(black_box(example));
+        b.iter(|| {
+            let _ = furigana.to_reading();
+        });
+    });
+
+    c.bench_function("parse to reading checked", |b| {
+        b.iter(|| {
+            // let _ = furigana.to_reading();
+            let _ = FuriParser::new(black_box(example)).to_reading();
+        });
+    });
+
     c.bench_function("has kanji", |b| {
-        let furigana = Furigana::new_unchecked(example);
+        let furigana = Furigana::new_unchecked(black_box(example));
         b.iter(|| {
             let _ = furigana.has_kanji();
         });

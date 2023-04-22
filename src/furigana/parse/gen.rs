@@ -3,7 +3,7 @@ use std::str::MatchIndices;
 /// Generic parser for furigana segments that only returns the parts as strings.
 pub struct FuriParserGen<'a> {
     // Input
-    str: &'a str,
+    pub(crate) str: &'a str,
 
     // Tmp
     iter: MatchIndices<'a, [char; 2]>,
