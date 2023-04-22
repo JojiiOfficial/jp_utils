@@ -67,8 +67,7 @@ impl<'a> FuriToReadingParser<'a> {
     where
         W: FnMut(&str),
     {
-        let mut parser = FuriParserGen::new(self.str);
-        while let Some((txt, kanji)) = parser.next() {
+        for (txt, kanji) in FuriParserGen::new(self.str) {
             if kanji {
                 self.accept_kanji(txt, &mut w);
             } else {
@@ -83,7 +82,7 @@ impl<'a> FuriToReadingParser<'a> {
     where
         W: FnMut(&str),
     {
-        (w)(block)
+        w(block)
     }
 
     /// Parses the given block as kanji.

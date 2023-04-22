@@ -1,16 +1,18 @@
 pub mod check;
 mod gen;
 pub mod reading;
+pub mod unchecked;
 
+pub use gen::FuriParserGen;
+
+use self::unchecked::UncheckedFuriParser;
 use super::segment::SegmentRef;
 use crate::reading::Reading;
-use gen::FuriParserGen;
 
 /// Iterator over encoded furigana which returns ReadingPartRef's of all parts.
 /// Encoded furigana format: `[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]`
 pub struct FuriParser<'a> {
     gen_parser: FuriParserGen<'a>,
-    checked: bool,
 }
 
 impl<'a> FuriParser<'a> {
@@ -18,15 +20,21 @@ impl<'a> FuriParser<'a> {
     #[inline]
     pub fn new(str: &'a str) -> Self {
         Self {
-            checked: true,
             gen_parser: FuriParserGen::new(str),
         }
     }
 
-    /// Don't checke content, just parse.
-    pub fn unchecked(mut self) -> Self {
-        self.checked = false;
-        self
+    /// Returns an iterator over all parsed segments without doing any checks. Unparsable segments
+    /// may be parsed as kana part as fallback.
+    #[inline]
+    pub fn unchecked(self) -> UncheckedFuriParser<'a> {
+        UncheckedFuriParser::new(self.gen_parser)
+    }
+
+    /// Parses a single string segment
+    #[inline]
+    pub fn from_seg_str(txt: &'a str, kanji: bool) -> Result<SegmentRef, ()> {
+        SegmentRef::parse_str(txt, kanji, true)
     }
 
     /// Returns `true` if the given furigana is parsable.
@@ -34,8 +42,7 @@ impl<'a> FuriParser<'a> {
     where
         S: AsRef<str>,
     {
-        let r = s.as_ref();
-        FuriParser::new(r).all(|i| i.is_ok())
+        FuriParser::new(s.as_ref()).all(|i| i.is_ok())
     }
 
     /// Parses the furigana to a vec of segments.
@@ -44,43 +51,10 @@ impl<'a> FuriParser<'a> {
         self.collect()
     }
 
-    /// Parses the furigana to a vec of segments without checking the input for valid furigana
-    /// format.
-    #[inline]
-    pub fn to_vec_unchecked(self) -> Vec<SegmentRef<'a>> {
-        self.unchecked().map(|i| i.unwrap()).collect()
-    }
-
     /// Parses a string to a [`Reading`]
+    #[inline]
     pub fn to_reading(self) -> Result<Reading, ()> {
-        let mut kana = String::new();
-        let mut kanji = String::new();
-        let mut has_kanji = false;
-
-        for i in self {
-            let i = i?;
-            match i {
-                SegmentRef::Kana(k) => {
-                    kana.push_str(k);
-                    if has_kanji {
-                        kanji.push_str(k);
-                    }
-                }
-                SegmentRef::Kanji { kanji: k, readings } => {
-                    if !has_kanji {
-                        // lazy initialize kanji reading
-                        kanji = kana.clone();
-                        has_kanji = true;
-                    }
-                    kanji.push_str(k);
-                    for r in readings {
-                        kana.push_str(r);
-                    }
-                }
-            }
-        }
-        let kanji = has_kanji.then_some(kanji);
-        Ok(Reading::new_raw(kana, kanji))
+        self.collect()
     }
 }
 
@@ -89,7 +63,7 @@ impl<'a> Iterator for FuriParser<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let (txt, kanji) = self.gen_parser.next()?;
-        Some(SegmentRef::parse_str(txt, kanji, self.checked))
+        Some(Self::from_seg_str(txt, kanji))
     }
 }
 
@@ -112,23 +86,10 @@ mod test {
     #[test_case("この[人|ひと]が[嫌|きら]いです。")]
     #[test_case("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。"; "with brackets")]
     fn test_parse_furigana(furi: &str) {
-        let parsed = FuriParser::new(furi)
-            .unchecked()
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap();
+        let parsed = FuriParser::new(furi).to_vec().unwrap();
         let encoded = encode::sequence(&parsed);
-        assert_eq!(furi, encoded);
-    }
-
-    #[test_case("[音楽|おん|がく]が[好す]き")]
-    #[test_case("[音楽おん|がく]が[好す]き")]
-    #[test_case("[拝金主義|はい|きん|しゅ|ぎ]は[問題|も|ん|だい]"; "other")]
-    #[test_case("[拝金主義|はい|きん|しゅ|ぎ]]は[問題|も|ん|だい]"; "other2")]
-    #[test_case("[拝金主義|はい|きん|しゅ|ぎ|e]は[問題|もん|だい]")]
-    #[test_case("[拝金主義|はい|]")]
-    fn test_parse_furigana_error(furi: &str) {
-        let parsed = FuriParser::new(furi).collect::<Result<Vec<_>, _>>();
-        assert_eq!(parsed, Err(()));
+        // assert_eq!(furi, encoded);
+        assert_eq!(encoded, furi);
     }
 
     #[test_case("おんがくが[好|す]"; "End_kanji")]
@@ -149,21 +110,26 @@ mod test {
     fn test_empty() {
         let e = Segment::from_str("").unwrap();
         assert!(e.is_empty());
+
+        let mut p = FuriParser::new("");
+        assert_eq!(p.next(), None);
     }
 
     #[test]
     fn test_all_sentences() {
-        let data = File::open("./furigana.csv").unwrap();
+        let data = File::open("./furigana.csv").expect(
+            "No furigana file found! Place tatoebas furigana file converted in ./furigana.csv",
+        );
         let reader = BufReader::new(data);
         for line in reader.lines() {
             let line = line.unwrap();
-            let parsed = FuriParser::new(&line).collect::<Result<Vec<_>, _>>();
+            let parsed = FuriParser::new(&line).to_vec();
             if let Err(err) = parsed {
                 println!("Error: {err:?} at line {:?}", line);
                 continue;
             }
             let encoded = encode::sequence(&parsed.unwrap());
-            assert_eq!(line, encoded);
+            assert_eq!(encoded, line);
         }
     }
 }

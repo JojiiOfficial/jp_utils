@@ -2,6 +2,12 @@ use super::r_ref::ReadingRef;
 
 pub trait AsReadingRef {
     fn as_reading_ref(&self) -> ReadingRef<'_>;
+
+    /// Encodes the reading to furigana.
+    #[cfg(feature = "furigana")]
+    fn encode(&self) -> crate::furigana::Furigana<String> {
+        self.as_reading_ref().encode()
+    }
 }
 
 impl AsReadingRef for (&String, Option<&String>) {

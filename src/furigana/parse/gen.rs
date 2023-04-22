@@ -17,7 +17,7 @@ impl<'a> FuriParserGen<'a> {
     #[inline]
     pub fn new(str: &'a str) -> Self {
         Self {
-            str: str.trim(),
+            str,
             kana_start: 0,
             block_start: None,
             buf: None,
@@ -25,7 +25,7 @@ impl<'a> FuriParserGen<'a> {
         }
     }
 
-    fn next2(&mut self) -> Option<(&'a str, bool)> {
+    fn advance(&mut self) -> Option<(&'a str, bool)> {
         loop {
             let (cur_bracket, c) = match self.iter.next() {
                 Some(k) => k,
@@ -53,7 +53,7 @@ impl<'a> FuriParserGen<'a> {
             let mut to_return = Some((kanji, true));
 
             if self.kana_start < prev_bracket {
-                self.buf = Some((kanji, true));
+                self.buf = to_return.take();
                 let kana_text = &self.str[self.kana_start..prev_bracket];
                 to_return = Some((kana_text, false));
             }
@@ -71,11 +71,6 @@ impl<'a> Iterator for FuriParserGen<'a> {
         if let Some(t) = self.buf.take() {
             return Some(t);
         }
-        self.next2()
+        self.advance()
     }
-}
-
-#[cfg(test)]
-mod test {
-    //
 }

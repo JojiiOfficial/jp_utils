@@ -1,3 +1,5 @@
+use crate::furigana::Furigana;
+
 use super::AsSegment;
 use itertools::Itertools;
 
@@ -31,10 +33,10 @@ where
 }
 
 /// Encodes a sequence of ReadingParts as a single furigana string
-pub fn sequence<'a, I, P>(iter: I) -> String
+pub fn sequence<'a, I, P>(iter: I) -> Furigana<String>
 where
     I: IntoIterator<Item = &'a P>,
     P: AsSegment + 'a,
 {
-    iter.into_iter().map(|i| i.encode()).join("")
+    iter.into_iter().map(|i| i.encode()).collect()
 }

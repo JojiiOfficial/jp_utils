@@ -1,6 +1,9 @@
 use super::traits::AsReadingRef;
 
-/// A borrowed version of [`ReadingOwned`].
+#[cfg(feature = "furigana")]
+use crate::furigana::Furigana;
+
+/// A borrowed version of [`super::Reading`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ReadingRef<'a> {
@@ -43,6 +46,18 @@ impl<'a> ReadingRef<'a> {
     #[inline]
     pub fn kana(&self) -> &str {
         self.kana
+    }
+
+    /// Encodes the reading to furigana.
+    #[cfg(feature = "furigana")]
+    pub fn encode(&self) -> Furigana<String> {
+        use crate::furigana::segment::encode;
+
+        if let Some(kanji) = self.kanji() {
+            Furigana(encode::single_block(kanji, self.kana))
+        } else {
+            Furigana(self.kana.to_string())
+        }
     }
 }
 

@@ -1,23 +1,24 @@
-/// Compare furigana
+/// Compare furigana segments
 pub mod compare;
-/// Parses encoded furigana
+/// Parses encoded furigana.
 pub mod parse;
 /// A single segment of an encoded furigana string.
 pub mod segment;
-/// Furigana sequence
+/// Sequence of parsed segments.
 pub mod seq;
 
 use self::{
-    parse::reading::FuriToReadingParser,
+    parse::{reading::FuriToReadingParser, unchecked::UncheckedFuriParser, FuriParserGen},
     segment::{AsSegment, Segment, SegmentRef},
 };
+use crate::reading::Reading;
 use parse::FuriParser;
 use std::{borrow::Borrow, fmt::Display};
 
 /// A struct that holds encoded furigana data in a string. Such an element can be created by directly wrapping around
 /// a [`String`] or using the `new()` function which has the benefit that the furigana gets validated.
 /// Valid encoded furigana looks like this: `[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]です。`
-#[derive(Clone, PartialEq, Eq, Hash, Default, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Default, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Furigana<T>(pub T);
 
@@ -34,22 +35,22 @@ where
         Ok(Self::new_unchecked(furi))
     }
 
-    /// Create a new Furigana value with a given encoded furi string as value which doesn't get checked.
-    #[inline]
-    pub fn new_unchecked(furi: T) -> Self {
-        Self(furi)
-    }
-
     /// Returns `true` if the Furigana is empty.
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.0.as_ref().is_empty()
+        self.raw().is_empty()
     }
 
     /// Returns the raw (encoded) furigana string.
     #[inline]
     pub fn raw(&self) -> &str {
         self.0.as_ref()
+    }
+
+    /// Returns a generalized furigana parser over the furigana data.
+    #[inline]
+    pub fn gen_parser(&self) -> FuriParserGen {
+        FuriParserGen::new(self.raw())
     }
 
     /// Returns the kana reading of the Furigana.
@@ -79,19 +80,31 @@ where
     /// Returns `true` if the Furigana has at least one kanji segment.
     #[inline]
     pub fn has_kanji(&self) -> bool {
-        self.segments().any(|i| i.is_kanji())
+        self.gen_parser().any(|i| i.1)
+    }
+
+    /// Returns `true` if the furgiana has a given kanji literal.
+    #[inline]
+    pub fn contains_kanji(&self, kanji: char) -> bool {
+        self.raw().contains(kanji)
+    }
+
+    /// Returns a [`Reading`] of the furigana.
+    #[inline]
+    pub fn to_reading(&self) -> Reading {
+        self.segments().collect()
     }
 
     /// Returns an Iterator over all segments of the furigana.
     #[inline]
-    pub fn segments(&self) -> impl Iterator<Item = SegmentRef> {
-        FuriParser::new(self.raw()).unchecked().map(|i| i.unwrap())
+    pub fn segments(&self) -> UncheckedFuriParser {
+        FuriParser::new(self.raw()).unchecked()
     }
 
     /// Returns the amount of reading segments.
     #[inline]
     pub fn segment_count(&self) -> usize {
-        self.segments().count()
+        self.gen_parser().count()
     }
 
     /// Converts the sequence into a Vec of its segments.
@@ -103,7 +116,9 @@ where
     /// Returns the segment at `pos` or None if out of bounds.
     #[inline]
     pub fn segment_at(&self, pos: usize) -> Option<SegmentRef> {
-        self.segments().nth(pos)
+        self.gen_parser()
+            .nth(pos)
+            .map(|i| UncheckedFuriParser::from_seg_str(i.0, i.1))
     }
 
     /// Converts the sequence into a Vec of its segments.
@@ -111,11 +126,25 @@ where
     pub fn as_segments_ref(&self) -> Vec<SegmentRef> {
         self.segments().collect()
     }
+}
+
+impl<T> Furigana<T> {
+    /// Returns a new furigana wrapper with the current furiganas data as reference.
+    #[inline]
+    pub fn as_ref(&self) -> Furigana<&T> {
+        Furigana(&self.0)
+    }
 
     /// Returns the inner string of the furigana value.
     #[inline]
     pub fn into_inner(self) -> T {
         self.0
+    }
+
+    /// Create a new Furigana value with a given encoded furi string as value which doesn't get checked.
+    #[inline]
+    pub fn new_unchecked(furi: T) -> Self {
+        Self(furi)
     }
 }
 
@@ -232,7 +261,7 @@ where
 {
     #[inline]
     fn as_ref(&self) -> &str {
-        self.0.as_ref()
+        self.raw()
     }
 }
 
@@ -246,8 +275,30 @@ where
     }
 }
 
+impl<T> PartialEq<String> for Furigana<T>
+where
+    T: AsRef<str>,
+{
+    #[inline]
+    fn eq(&self, other: &String) -> bool {
+        self.raw() == other
+    }
+}
+
+impl<T> PartialEq<&str> for Furigana<T>
+where
+    T: AsRef<str>,
+{
+    #[inline]
+    fn eq(&self, other: &&str) -> bool {
+        self.raw() == *other
+    }
+}
+
 #[cfg(test)]
 mod test {
+    use crate::reading::ReadingRef;
+
     use super::*;
 
     #[test]
@@ -255,6 +306,10 @@ mod test {
         let furi = Furigana::new_unchecked("[音楽|おん|がく]が[大好|だい|す]きです");
         assert_eq!(furi.kanji().to_string(), "音楽が大好きです");
         assert_eq!(furi.kana().to_string(), "おんがくがだいすきです");
+        assert_eq!(
+            furi.to_reading(),
+            ReadingRef::new_with_kanji("おんがくがだいすきです", "音楽が大好きです")
+        );
     }
 
     #[test]

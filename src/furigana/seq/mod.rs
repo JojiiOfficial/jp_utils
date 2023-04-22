@@ -1,20 +1,21 @@
 pub mod iter;
 pub mod reading;
 
-use crate::reading::Reading;
-
 use self::{
     iter::{IterItem, SeqIter},
     reading::SReading,
 };
-use std::{slice::Iter, str::FromStr};
-
 use super::{
     parse::FuriParser,
     segment::{encode, AsSegment, Segment, SegmentRef},
+    Furigana,
 };
+use crate::reading::Reading;
+use std::{slice::Iter, str::FromStr};
 
-/// Sequence of multiple furigana reading parts.
+/// Sequence of parsed furigana segments. This type can be helpful if you access the inner parts a
+/// lot. Otherwise you should use [`crate::furigana::Furigana`] instead as its memory efficient and
+/// most operations are faster and without allocation.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FuriSequence<T> {
@@ -116,7 +117,7 @@ where
 
     /// Encodes the sequence to a parsable furigana string.
     #[inline]
-    pub fn encode(&self) -> String {
+    pub fn encode(&self) -> Furigana<String> {
         encode::sequence(self.iter())
     }
 
@@ -168,7 +169,7 @@ impl FromStr for FuriSequence<Segment> {
 impl<T: AsSegment> ToString for FuriSequence<T> {
     #[inline]
     fn to_string(&self) -> String {
-        self.encode()
+        self.encode().into_inner()
     }
 }
 

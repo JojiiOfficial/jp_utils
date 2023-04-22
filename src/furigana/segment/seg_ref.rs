@@ -36,22 +36,12 @@ impl<'a> SegmentRef<'a> {
         match self {
             SegmentRef::Kana(k) => Segment::Kana(k.to_string()),
             SegmentRef::Kanji { kanji, readings } => {
-                let readings: TinyVec<[String; 1]> =
-                    readings.iter().map(|i| i.to_string()).collect();
+                let readings = readings.iter().map(|i| i.to_string()).collect();
                 Segment::Kanji {
                     kanji: kanji.to_string(),
                     readings,
                 }
             }
-        }
-    }
-
-    /// Parses a ReadingPart from string
-    pub fn parse_str(str: &'a str, kanji: bool, checked: bool) -> Result<SegmentRef, ()> {
-        if kanji {
-            Self::parse_kanji_str(str, checked).ok_or(())
-        } else {
-            Ok(SegmentRef::Kana(str))
         }
     }
 
@@ -64,7 +54,7 @@ impl<'a> SegmentRef<'a> {
         }
     }
 
-    /// Parses a ReadingPart from string
+    /// Parses a `SegmentRef` from string
     pub fn from_str_unchecked(str: &'a str) -> SegmentRef {
         if str.starts_with('[') && str.ends_with(']') {
             Self::parse_kanji_str(str, false).unwrap()
@@ -73,14 +63,11 @@ impl<'a> SegmentRef<'a> {
         }
     }
 
-    /// Parses a ReadingPart from string
-    pub fn from_str_2(str: &'a str) -> SegmentRef {
-        Self::parse_kanji_str(str, false).unwrap()
-    }
-
-    /// Parses an encoded Kanji furigana string eg: `[音楽|おん|がく]` thus `s` has to start with
-    /// `[` and end  with `]`. If the readings don't line up with the kanji literal count and has
-    /// are more than 1 (fallback) the function returns None.
+    /// Parses an encoded Kanji furigana segment eg: `[音楽|おん|がく]`.
+    /// Multiple kanji literals with a single reading are allowed.
+    /// Is `check` == `true` the literals and kanji readings have to match up (except if there is only
+    /// one reading) and there has to be at least a single reading. If `check` == `false` no
+    /// checks a made and a parsed Segment will always be returned.
     fn parse_kanji_str(s: &'a str, checked: bool) -> Option<SegmentRef> {
         // Strip [ and ] and split at the |
         let mut split = s[1..s.len() - 1].split('|');
@@ -102,6 +89,16 @@ impl<'a> SegmentRef<'a> {
         }
 
         Some(SegmentRef::Kanji { kanji, readings })
+    }
+
+    /// Parses a ReadingPart from string with `kanji` as parameter to give a hint whether its a
+    /// kanji or kana segment. This avoids additional checks.
+    pub(crate) fn parse_str(str: &'a str, kanji: bool, checked: bool) -> Result<SegmentRef, ()> {
+        if kanji {
+            Self::parse_kanji_str(str, checked).ok_or(())
+        } else {
+            Ok(SegmentRef::Kana(str))
+        }
     }
 }
 

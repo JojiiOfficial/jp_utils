@@ -19,11 +19,13 @@ pub struct Reading {
 }
 
 impl Reading {
+    /// Create a new kana reading.
     #[inline]
     pub fn new(kana: String) -> Self {
         Self { kana, kanji: None }
     }
 
+    /// Create a new reading with a kanji.
     #[inline]
     pub fn new_with_kanji(kana: String, kanji: String) -> Self {
         Self {
@@ -32,6 +34,7 @@ impl Reading {
         }
     }
 
+    /// Create a new reading where you can pass an `Option` for kanji.
     #[inline]
     pub fn new_raw(kana: String, kanji: Option<String>) -> Self {
         Self { kana, kanji }
@@ -63,6 +66,13 @@ impl AsReadingRef for Reading {
     }
 }
 
+impl PartialEq<ReadingRef<'_>> for Reading {
+    #[inline]
+    fn eq(&self, other: &ReadingRef) -> bool {
+        self.kana.as_str() == other.kana() && self.kanji.as_deref() == other.kanji()
+    }
+}
+
 #[cfg(feature = "furigana")]
 impl From<&FuriSequence<Segment>> for Reading {
     #[inline]
@@ -80,6 +90,38 @@ impl From<FuriSequence<Segment>> for Reading {
         let kana = value.kana_reading().to_string();
         let kanji = value.has_kanji().then(|| value.kanji_reading().to_string());
         Self { kana, kanji }
+    }
+}
+
+#[cfg(feature = "furigana")]
+impl<S: AsSegment> FromIterator<S> for Reading {
+    fn from_iter<T: IntoIterator<Item = S>>(iter: T) -> Reading {
+        let mut kana = String::new();
+        let mut kanji = String::new();
+        let mut has_kanji = false;
+
+        for i in iter {
+            if let Some(k) = i.as_kanji() {
+                let k = k.as_ref();
+                if !has_kanji {
+                    // lazy initialize kanji reading
+                    kanji = kana.clone();
+                    has_kanji = true;
+                }
+                kanji.push_str(k);
+                for r in i.readings().unwrap() {
+                    kana.push_str(r.as_ref());
+                }
+            } else if let Some(k) = i.as_kana() {
+                let k = k.as_ref();
+                kana.push_str(k);
+                if has_kanji {
+                    kanji.push_str(k);
+                }
+            }
+        }
+        let kanji = has_kanji.then_some(kanji);
+        Reading::new_raw(kana, kanji)
     }
 }
 
