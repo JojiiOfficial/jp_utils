@@ -13,7 +13,7 @@ use self::{
 };
 use crate::reading::Reading;
 use parse::FuriParser;
-use std::{borrow::Borrow, fmt::Display};
+use std::{borrow::Borrow, fmt::Display, ops::Deref};
 
 /// A struct that holds encoded furigana data in a string. Such an element can be created by directly wrapping around
 /// a [`String`] or using the `new()` function which has the benefit that the furigana gets validated.
@@ -129,6 +129,16 @@ where
 }
 
 impl<T> Furigana<T> {
+    /// Returns a new Furgiana block with the inner type dereferenced.
+    #[inline]
+    pub fn as_deref(&self) -> Furigana<&T::Target>
+    where
+        T: Deref,
+        T::Target: AsRef<str>,
+    {
+        Furigana(&self.0)
+    }
+
     /// Returns a new furigana wrapper with the current furiganas data as reference.
     #[inline]
     pub fn as_ref(&self) -> Furigana<&T> {
@@ -315,6 +325,16 @@ mod test {
     #[test]
     fn test_furigana2() {
         let furi = Furigana::new("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。").unwrap();
+        assert_eq!(
+            furi.kanji().to_string(),
+            "2x+1の定義域がA=[1,2]のとき、fの値域はf(A) = [3,5]となる。"
+        );
+    }
+
+    #[test]
+    fn test_furigana3() {
+        let furi = Furigana("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。".to_string());
+        let furi = furi.as_deref();
         assert_eq!(
             furi.kanji().to_string(),
             "2x+1の定義域がA=[1,2]のとき、fの値域はf(A) = [3,5]となる。"
