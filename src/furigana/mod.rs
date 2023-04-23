@@ -10,6 +10,7 @@ pub mod seq;
 use self::{
     parse::{reading::FuriToReadingParser, unchecked::UncheckedFuriParser, FuriParserGen},
     segment::{AsSegment, Segment, SegmentRef},
+    seq::FuriSequence,
 };
 use crate::reading::Reading;
 use parse::FuriParser;
@@ -190,6 +191,25 @@ impl Furigana<String> {
         S: AsRef<str>,
     {
         self.0.push_str(seg.as_ref());
+    }
+}
+
+impl<T> From<FuriSequence<T>> for Furigana<String>
+where
+    T: AsSegment,
+{
+    #[inline]
+    fn from(value: FuriSequence<T>) -> Self {
+        value.encode()
+    }
+}
+
+impl<'a, T> Into<FuriSequence<SegmentRef<'a>>> for &'a Furigana<T>
+where
+    T: AsRef<str>,
+{
+    fn into(self) -> FuriSequence<SegmentRef<'a>> {
+        FuriSequence::from(FuriParser::new(self.raw()).unchecked().to_vec())
     }
 }
 

@@ -146,9 +146,7 @@ impl<'a> FuriSequence<SegmentRef<'a>> {
     pub fn parse_ref(s: &'a str) -> Result<FuriSequence<SegmentRef<'a>>, ()> {
         FuriParser::new(s).collect()
     }
-}
 
-impl<'a> FuriSequence<SegmentRef<'a>> {
     #[inline]
     pub fn to_owned(&self) -> FuriSequence<Segment> {
         self.iter().map(|i| i.to_owned()).collect()
@@ -207,6 +205,12 @@ where
         Self { parts }
     }
 }
+
+/* impl<'a> From<&'a Furigana<&'a str>> for FuriSequence<SegmentRef<'a>> {
+    fn from(value: &'a Furigana<&'a str>) -> Self {
+        FuriSequence::parse_ref(value.raw()).unwrap()
+    }
+} */
 
 impl<T: Default> Default for FuriSequence<T>
 where
