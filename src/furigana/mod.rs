@@ -96,6 +96,12 @@ where
         Reading::from(self)
     }
 
+    /// Converts the furigana to a `FuriSequence`.
+    #[inline]
+    pub fn to_seq(&self) -> FuriSequence<SegmentRef> {
+        self.into()
+    }
+
     /// Returns an Iterator over all segments of the furigana.
     #[inline]
     pub fn segments(&self) -> UncheckedFuriParser {
@@ -208,8 +214,9 @@ impl<'a, T> Into<FuriSequence<SegmentRef<'a>>> for &'a Furigana<T>
 where
     T: AsRef<str>,
 {
+    #[inline]
     fn into(self) -> FuriSequence<SegmentRef<'a>> {
-        FuriSequence::from(FuriParser::new(self.raw()).unchecked().to_vec())
+        FuriSequence::from(self.segments().to_vec())
     }
 }
 
