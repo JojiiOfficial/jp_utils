@@ -47,10 +47,16 @@ impl Reading {
         self.kanji.is_some()
     }
 
+    /// Returns the kanji reading if available or uses kana as fallback.
+    #[inline]
+    pub fn kanji_or_kana(&self) -> &str {
+        self.kanji.as_deref().unwrap_or(&self.kana)
+    }
+
     /// Returns the kanji reading if exists.
     #[inline]
-    pub fn kanji(&self) -> Option<&String> {
-        self.kanji.as_ref()
+    pub fn kanji(&self) -> Option<&str> {
+        self.kanji.as_deref()
     }
 
     /// Returns the readings kana reading
