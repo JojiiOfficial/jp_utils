@@ -1,5 +1,5 @@
 use super::{encode, FlattenIter, ReadingIter};
-use crate::reading::Reading;
+use crate::reading::{traits::AsReadingRef, Reading};
 use itertools::Itertools;
 use tinyvec::TinyVec;
 
@@ -122,6 +122,31 @@ pub trait AsSegment {
         } else {
             Reading::new(self.kana_reading())
         }
+    }
+
+    /// Returns `true` if the segment holds equal reading data as `reading`.
+    fn eq_reading<R>(&self, reading: R) -> bool
+    where
+        R: AsReadingRef,
+    {
+        let reading = reading.as_reading_ref();
+
+        if let Some(kana) = self.as_kana() {
+            return kana.as_ref() == reading.kana() && !reading.has_kanji();
+        }
+
+        if !reading.has_kanji() {
+            return false;
+        }
+        let reading_kanji = match reading.kanji() {
+            Some(k) => k,
+            None => return false,
+        };
+
+        // Safety:
+        // A reading is either a kanji or kana. This is unreachable if its not kanji.
+        let kanji = unsafe { self.as_kanji().unwrap_unchecked().as_ref() };
+        kanji == reading_kanji && self.kana_reading() == reading.kana()
     }
 }
 

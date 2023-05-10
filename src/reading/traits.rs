@@ -5,6 +5,7 @@ pub trait AsReadingRef {
 
     /// Encodes the reading to furigana.
     #[cfg(feature = "furigana")]
+    #[inline]
     fn encode(&self) -> crate::furigana::Furigana<String> {
         self.as_reading_ref().encode()
     }

@@ -19,6 +19,16 @@ fn index_item_decode(c: &mut Criterion) {
         });
     });
 
+    c.bench_function("furi replace", |b| {
+        let furigana = Furigana::new_unchecked(black_box(example));
+        b.iter(|| {
+            let _ = furigana.replace_seg(
+                black_box(("ていきょう", "提供")),
+                black_box(("おんがく", "音楽")),
+            );
+        });
+    });
+
     c.bench_function("parse to reading", |b| {
         let furigana = Furigana::new_unchecked(black_box(example));
         b.iter(|| {

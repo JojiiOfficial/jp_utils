@@ -12,14 +12,14 @@ use self::{
     segment::{AsSegment, Segment, SegmentRef},
     seq::FuriSequence,
 };
-use crate::reading::Reading;
+use crate::reading::{traits::AsReadingRef, Reading};
 use parse::FuriParser;
 use std::{borrow::Borrow, fmt::Display, ops::Deref};
 
 /// A struct that holds encoded furigana data in a string. Such an element can be created by directly wrapping around
 /// a [`String`] or using the `new()` function which has the benefit that the furigana gets validated.
 /// Valid encoded furigana looks like this: `[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]です。`
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Default, Debug)]
+#[derive(Clone, Copy, Hash, Default, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Furigana<T>(pub T);
 
@@ -132,6 +132,35 @@ where
     #[inline]
     pub fn as_segments_ref(&self) -> Vec<SegmentRef> {
         self.segments().collect()
+    }
+
+    /// Replaces all occurring `src_seg` with the given `with` segment.
+    pub fn replace_seg<SR, WR>(&self, src: SR, with: WR) -> Furigana<String>
+    where
+        SR: AsReadingRef,
+        WR: AsReadingRef,
+    {
+        let src = src.as_reading_ref();
+
+        // Don't encode `with` more than once in cases there are two segments to replace.
+        let mut with_str: Option<String> = None;
+
+        let mut out_buf = String::with_capacity(self.raw().len());
+
+        for seg_str in self.gen_parser() {
+            let seg = UncheckedFuriParser::from_seg_str(seg_str.0, seg_str.1);
+
+            if seg.eq_reading(src) {
+                let with = with_str.get_or_insert_with(|| with.encode().into_inner());
+                out_buf.push_str(with);
+            } else {
+                out_buf.push_str(seg_str.0);
+            }
+        }
+
+        out_buf.shrink_to_fit();
+
+        Furigana(out_buf)
     }
 }
 
@@ -263,6 +292,18 @@ where
     }
 }
 
+impl<T, S> PartialEq<Furigana<S>> for Furigana<T>
+where
+    T: AsRef<str>,
+    S: AsRef<str>,
+    S: PartialEq<T>,
+{
+    #[inline]
+    fn eq(&self, other: &Furigana<S>) -> bool {
+        self.0.as_ref() == other.0.as_ref()
+    }
+}
+
 impl<T> Display for Furigana<T>
 where
     T: AsRef<str>,
@@ -366,5 +407,12 @@ mod test {
             furi.kanji().to_string(),
             "2x+1の定義域がA=[1,2]のとき、fの値域はf(A) = [3,5]となる。"
         );
+    }
+
+    #[test]
+    fn test_replace_seg() {
+        let furi = Furigana::new_unchecked("[音楽|おん|がく]が[大好|だい|す]きです");
+        let new = furi.replace_seg(("おんがく", "音楽"), "セックス");
+        assert_eq!(new, Furigana("セックスが[大好|だい|す]きです"))
     }
 }
