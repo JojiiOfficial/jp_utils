@@ -292,6 +292,13 @@ where
     }
 }
 
+impl<T> Eq for Furigana<T>
+where
+    T: AsRef<str>,
+    T: PartialEq<T>,
+{
+}
+
 impl<T, S> PartialEq<Furigana<S>> for Furigana<T>
 where
     T: AsRef<str>,
@@ -411,8 +418,8 @@ mod test {
 
     #[test]
     fn test_replace_seg() {
-        let furi = Furigana::new_unchecked("[音楽|おん|がく]が[大好|だい|す]きです");
-        let new = furi.replace_seg(("おんがく", "音楽"), "セックス");
+        let new = Furigana::new_unchecked("[音楽|おん|がく]が[大好|だい|す]きです")
+            .replace_seg(("おんがく", "音楽"), "セックス");
         assert_eq!(new, Furigana("セックスが[大好|だい|す]きです"))
     }
 }
