@@ -10,10 +10,9 @@ pub use iter::{
 };
 pub use seg_ref::SegmentRef;
 
+use self::as_segment::AsSegmentMut;
 use std::str::FromStr;
 use tinyvec::{tiny_vec, TinyVec};
-
-use self::as_segment::AsSegmentMut;
 
 /// Represents a single segment of a furigana string. This can be a kana or kanji segment. Kanji
 /// segments also save the assigned kana readings.

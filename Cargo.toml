@@ -2,7 +2,7 @@
 description = "Utils for working with Japanese text."
 name = "jp_utils"
 authors = ["jojii <jojii@gmx.net>"]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "AGPL-3.0"
 
@@ -10,8 +10,8 @@ license = "AGPL-3.0"
 
 [dependencies]
 itertools = {version = "0.10.5", optional = true}
-serde = { version = "1.0.160", features = ['derive'], optional = true }
-tinyvec = { version = "1.6.0", features = ["alloc"] }
+serde = { version = "1.0.160", default_features = false, features = ["derive", "std"], optional = true }
+tinyvec = { version = "1.6.0", default_features = false, features = ["alloc"] }
 
 [dev-dependencies]
 test-case = "3.1.0"
@@ -20,7 +20,7 @@ rand = "0.8.5"
 serde_json = "1.0.96"
 
 [features]
-default = ["furigana", "serde"]
+default = ["furigana"]
 full = ["furigana","serde","hiragana"]
 hiragana = []
 furigana = ["itertools"]
