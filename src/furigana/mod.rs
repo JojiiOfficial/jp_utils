@@ -1,3 +1,5 @@
+/// Transcodes furigana codes into various different styles.
+pub mod cformat;
 /// Compare furigana segments
 pub mod compare;
 /// Parses encoded furigana.
@@ -7,14 +9,17 @@ pub mod segment;
 /// Sequence of parsed segments.
 pub mod seq;
 
-use self::{
-    parse::{reading::FuriToReadingParser, unchecked::UncheckedFuriParser, FuriParserGen},
-    segment::{AsSegment, Segment, SegmentRef},
-    seq::FuriSequence,
-};
 use crate::reading::{traits::AsReadingRef, Reading};
-use parse::FuriParser;
-use std::{borrow::Borrow, fmt::Display, ops::Deref};
+use parse::{
+    reading::FuriToReadingParser, unchecked::UncheckedFuriParser, FuriParser, FuriParserGen,
+};
+use segment::{AsSegment, Segment, SegmentRef};
+use seq::FuriSequence;
+use std::{
+    borrow::Borrow,
+    fmt::Display,
+    ops::{Deref, Range},
+};
 
 /// A struct that holds encoded furigana data in a string. Such an element can be created by directly wrapping around
 /// a [`String`] or using the `new()` function which has the benefit that the furigana gets validated.
@@ -78,6 +83,12 @@ where
         self.kanji().to_string()
     }
 
+    /// Returns `true` if the Furigana has at least one kana segment.
+    #[inline]
+    pub fn has_kana(&self) -> bool {
+        self.gen_parser().any(|i| !i.1)
+    }
+
     /// Returns `true` if the Furigana has at least one kanji segment.
     #[inline]
     pub fn has_kanji(&self) -> bool {
@@ -90,10 +101,10 @@ where
         self.raw().contains(kanji)
     }
 
-    /// Returns a [`Reading`] of the furigana.
+    /// Returns a `Reading` of the furigana.
     #[inline]
     pub fn to_reading(&self) -> Reading {
-        Reading::from(self)
+        self.into()
     }
 
     /// Converts the furigana to a `FuriSequence`.
@@ -102,7 +113,7 @@ where
         self.into()
     }
 
-    /// Returns an Iterator over all segments of the furigana.
+    /// Returns an iterator over all segments of the furigana.
     #[inline]
     pub fn segments(&self) -> UncheckedFuriParser {
         FuriParser::new(self.raw()).unchecked()
@@ -120,11 +131,22 @@ where
         self.segments().map(|i| i.to_owned()).collect()
     }
 
-    /// Returns the segment at `pos` or None if out of bounds.
+    /// Returns the segment at `pos` or None if out of bounds. This is faster than
+    /// `self.segments().nth(pos)` as it only encodes the value at `pos`.
     #[inline]
     pub fn segment_at(&self, pos: usize) -> Option<SegmentRef> {
         self.gen_parser()
             .nth(pos)
+            .map(|i| UncheckedFuriParser::from_seg_str(i.0, i.1))
+    }
+
+    #[inline]
+    pub fn segment_range(&self, r: Range<usize>) -> impl Iterator<Item = SegmentRef> {
+        let start = r.start;
+        let len = r.len();
+        self.gen_parser()
+            .skip(start)
+            .take(len)
             .map(|i| UncheckedFuriParser::from_seg_str(i.0, i.1))
     }
 
@@ -161,6 +183,12 @@ where
         out_buf.shrink_to_fit();
 
         Furigana(out_buf)
+    }
+
+    /// Converts the furigana to a Furigana<String>
+    #[inline]
+    pub fn as_owned(&self) -> Furigana<String> {
+        Furigana(self.raw().to_string())
     }
 }
 
@@ -204,21 +232,20 @@ impl Furigana<String> {
         self.0.push_str(&seg.encode());
     }
 
-    /// Pushes a strting to the furigana. Returns an error if `seg` is no valif furigana and can't
+    /// Pushes an already encoded string to the furigana. Returns an error if `seg` is no valid furigana and can't
     /// be pushed.
     pub fn push_str<S>(&mut self, seg: S) -> Result<(), ()>
     where
         S: AsRef<str>,
     {
-        let seg = seg.as_ref();
-        if !FuriParser::check(seg) {
+        if !FuriParser::check(&seg) {
             return Err(());
         }
-        self.0.push_str(seg);
+        self.push_str_unchecked(seg);
         Ok(())
     }
 
-    /// Pushes a strting to the furigana without checking if `seg` is valid furigana. The caller
+    /// Pushes a string to the furigana without checking if `seg` is valid furigana. The caller
     /// has to ensure that only valid furigana strings will be pushed.
     #[inline]
     pub fn push_str_unchecked<S>(&mut self, seg: S)
@@ -229,50 +256,35 @@ impl Furigana<String> {
     }
 }
 
-impl<T> From<FuriSequence<T>> for Furigana<String>
-where
-    T: AsSegment,
-{
+impl<T: AsSegment> From<FuriSequence<T>> for Furigana<String> {
     #[inline]
     fn from(value: FuriSequence<T>) -> Self {
         value.encode()
     }
 }
 
-impl<'a, T> Into<FuriSequence<SegmentRef<'a>>> for &'a Furigana<T>
-where
-    T: AsRef<str>,
-{
+impl<'a, T: AsRef<str>> Into<FuriSequence<SegmentRef<'a>>> for &'a Furigana<T> {
     #[inline]
     fn into(self) -> FuriSequence<SegmentRef<'a>> {
         FuriSequence::from(self.segments().to_vec())
     }
 }
 
-impl<T> From<T> for Furigana<T>
-where
-    T: AsRef<str>,
-{
+impl<T: AsRef<str>> From<T> for Furigana<T> {
     #[inline]
     fn from(value: T) -> Self {
         Self(value)
     }
 }
 
-impl<T> From<Furigana<T>> for Vec<Segment>
-where
-    T: AsRef<str>,
-{
+impl<T: AsRef<str>> From<Furigana<T>> for Vec<Segment> {
     #[inline]
     fn from(value: Furigana<T>) -> Self {
         value.as_segments()
     }
 }
 
-impl<S> FromIterator<S> for Furigana<String>
-where
-    S: AsRef<str>,
-{
+impl<S: AsRef<str>> FromIterator<S> for Furigana<String> {
     fn from_iter<I: IntoIterator<Item = S>>(iter: I) -> Self {
         iter.into_iter().fold(Furigana::default(), |mut i, f| {
             i.0.push_str(f.as_ref());
@@ -281,10 +293,7 @@ where
     }
 }
 
-impl<S> Extend<S> for Furigana<String>
-where
-    S: AsSegment,
-{
+impl<S: AsSegment> Extend<S> for Furigana<String> {
     fn extend<I: IntoIterator<Item = S>>(&mut self, iter: I) {
         for s in iter {
             self.push_segment(s);
@@ -292,12 +301,7 @@ where
     }
 }
 
-impl<T> Eq for Furigana<T>
-where
-    T: AsRef<str>,
-    T: PartialEq<T>,
-{
-}
+impl<T> Eq for Furigana<T> where T: AsRef<str> + PartialEq<T> {}
 
 impl<T, S> PartialEq<Furigana<S>> for Furigana<T>
 where
@@ -311,89 +315,132 @@ where
     }
 }
 
-impl<T> Display for Furigana<T>
-where
-    T: AsRef<str>,
-{
+impl<T: AsRef<str>> Display for Furigana<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.raw())
     }
 }
 
-impl<T> Borrow<str> for Furigana<T>
-where
-    T: AsRef<str>,
-{
+impl<T: AsRef<str>> Borrow<str> for Furigana<T> {
     #[inline]
     fn borrow(&self) -> &str {
         self.0.as_ref()
     }
 }
 
-impl<T> Borrow<T> for Furigana<T>
-where
-    T: AsRef<str>,
-{
+impl<T: AsRef<str>> Borrow<T> for Furigana<T> {
     #[inline]
     fn borrow(&self) -> &T {
         &self.0
     }
 }
 
-impl<T> AsRef<str> for Furigana<T>
-where
-    T: AsRef<str>,
-{
+impl<T: AsRef<str>> AsRef<str> for Furigana<T> {
     #[inline]
     fn as_ref(&self) -> &str {
         self.raw()
     }
 }
 
-impl<T> AsRef<T> for Furigana<T>
-where
-    T: AsRef<str>,
-{
+impl<T: AsRef<str>> AsRef<T> for Furigana<T> {
     #[inline]
     fn as_ref(&self) -> &T {
         &self.0
     }
 }
 
-impl<T> PartialEq<String> for Furigana<T>
-where
-    T: AsRef<str>,
-{
+impl<T: AsRef<str>> PartialEq<String> for Furigana<T> {
     #[inline]
     fn eq(&self, other: &String) -> bool {
         self.raw() == other
     }
 }
 
-impl<T> PartialEq<&str> for Furigana<T>
-where
-    T: AsRef<str>,
-{
+impl<T: AsRef<str>> PartialEq<&str> for Furigana<T> {
     #[inline]
     fn eq(&self, other: &&str) -> bool {
         self.raw() == *other
     }
 }
 
+impl<'a, T> IntoIterator for &'a Furigana<T>
+where
+    T: AsRef<str>,
+{
+    type Item = SegmentRef<'a>;
+    type IntoIter = UncheckedFuriParser<'a>;
+
+    #[inline(always)]
+    fn into_iter(self) -> Self::IntoIter {
+        self.segments()
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::reading::ReadingRef;
-
     use super::*;
+    use crate::reading::ReadingRef;
+    use criterion::black_box;
 
     #[test]
     fn test_furigana() {
         let furi = Furigana::new_unchecked("[音楽|おん|がく]が[大好|だい|す]きです");
         assert_eq!(furi.kanji().to_string(), "音楽が大好きです");
         assert_eq!(furi.kana().to_string(), "おんがくがだいすきです");
+        assert_eq!(furi.kana_str(), furi.kana().to_string());
+        assert_eq!(furi.kanji_str(), furi.kanji().to_string());
         assert_eq!(
             furi.to_reading(),
             ReadingRef::new_with_kanji("おんがくがだいすきです", "音楽が大好きです")
+        );
+
+        assert!(furi.has_kana());
+        assert!(furi.has_kanji());
+        assert!(furi.contains_kanji('音'));
+        assert!(!furi.contains_kanji('弱'));
+        assert_eq!(furi.segment_count(), 4);
+        assert_eq!(furi.segment_at(black_box(2)), furi.segments().nth(2));
+        assert_eq!(furi.segment_at(1), Some(SegmentRef::new_kana("が")));
+        assert_eq!(
+            furi.as_segments(),
+            vec![
+                SegmentRef::new_kanji_mult("音楽", &["おん", "がく"]),
+                SegmentRef::new_kana("が"),
+                SegmentRef::new_kanji_mult("大好", &["だい", "す"]),
+                SegmentRef::new_kana("きです")
+            ]
+        );
+        assert_eq!(furi.as_segments(), furi.as_segments_ref());
+        assert_eq!(furi.as_ref().raw(), furi.raw());
+
+        let mut furi2 = furi.as_owned();
+        furi2.push_segment(SegmentRef::new_kana("よ"));
+        assert_eq!(
+            furi2.as_segments(),
+            vec![
+                SegmentRef::new_kanji_mult("音楽", &["おん", "がく"]),
+                SegmentRef::new_kana("が"),
+                SegmentRef::new_kanji_mult("大好", &["だい", "す"]),
+                SegmentRef::new_kana("きですよ")
+            ]
+        );
+        furi2.push_str("ね").unwrap();
+        assert_eq!(
+            furi2.as_segments(),
+            vec![
+                SegmentRef::new_kanji_mult("音楽", &["おん", "がく"]),
+                SegmentRef::new_kana("が"),
+                SegmentRef::new_kanji_mult("大好", &["だい", "す"]),
+                SegmentRef::new_kana("きですよね")
+            ]
+        );
+
+        assert_eq!(
+            furi2.segment_range(1..3).collect::<Vec<_>>(),
+            vec![
+                SegmentRef::new_kana("が"),
+                SegmentRef::new_kanji_mult("大好", &["だい", "す"]),
+            ]
         );
     }
 
@@ -421,5 +468,15 @@ mod test {
         let new = Furigana::new_unchecked("[音楽|おん|がく]が[大好|だい|す]きです")
             .replace_seg(("おんがく", "音楽"), "セックス");
         assert_eq!(new, Furigana("セックスが[大好|だい|す]きです"))
+    }
+
+    #[test]
+    fn test_is_empty() {
+        assert!(Furigana("").is_empty())
+    }
+
+    #[test]
+    fn test_validate() {
+        assert!(Furigana::new("音楽][]").is_err())
     }
 }

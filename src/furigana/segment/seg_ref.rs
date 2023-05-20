@@ -30,6 +30,15 @@ impl<'a> SegmentRef<'a> {
         }
     }
 
+    /// Creates a new ReadingPartRef with a value for kanji
+    #[inline]
+    pub fn new_kanji_mult(kanji: &'a str, readings: &[&'a str]) -> Self {
+        Self::Kanji {
+            kanji,
+            readings: readings.into(),
+        }
+    }
+
     /// Returns an owned ReadingPart
     #[inline]
     pub fn to_owned(&self) -> Segment {
@@ -154,7 +163,7 @@ impl<'a> AsSegment for SegmentRef<'a> {
 
     /// Returns the kanji readings
     #[inline]
-    fn readings(&self) -> Option<&TinyVec<[Self::StrType; 1]>> {
+    fn readings(&self) -> Option<&TinyVec<[&'a str; 1]>> {
         match self {
             SegmentRef::Kana(_) => None,
             SegmentRef::Kanji { kanji: _, readings } => Some(readings),

@@ -126,3 +126,19 @@ pub const COUNTER: &[&str] = &[
 pub fn is_counter<I: AsRef<str>>(i: I) -> bool {
     COUNTER.binary_search(&i.as_ref()).is_ok()
 }
+
+#[cfg(test)]
+mod test {
+    use test_case::test_case;
+
+    use super::is_counter;
+
+    #[test_case("首", true)]
+    #[test_case("ページ", true)]
+    #[test_case("音楽", false)]
+    #[test_case("時間", true)]
+    #[test_case("", false)]
+    fn test_is_counter(s: &str, exp: bool) {
+        assert_eq!(is_counter(s), exp)
+    }
+}

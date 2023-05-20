@@ -2,7 +2,10 @@ use std::str::FromStr;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use jp_utils::{
-    furigana::{compare::FuriComparator, parse::FuriParser, seq::FuriSequence, Furigana},
+    furigana::{
+        cformat::CodeFromatter, compare::FuriComparator, parse::FuriParser, seq::FuriSequence,
+        Furigana,
+    },
     reading::Reading,
 };
 
@@ -11,11 +14,32 @@ fn index_item_decode(c: &mut Criterion) {
 
     let example2 = "[水|みず]、ガス、[電気|でん|き]が[遠|とお]くから[運|はこ]ばれて[我々|われわれ]の[要求|よう|きゅう]を[満|み]たすためになんなく[供給|きょう|きゅう]されているように、いつか[画像|が|ぞう]と[音楽|おん|がく]はちょっとした[合図|あい|ず]みたいなシンプルな[手|て]の[仕草|し|ぐさ]によって[提供|ていきょう]されることにもなります。";
 
+    let example3 = "[水|みず]、ガス、[電気|でん|き]が[遠|とお]くから[運|はこ]ばれて[我々|われわれ]の[要求|よう|きゅう]を[満|み]たすためになんなく[供|きょう][給|きゅう]されているように、いつか[画像|が|ぞう]と[音楽|おん|がく]はちょっとした[合|あい][図|ず]みたいなシンプルな[手|て]の[仕|し][草|ぐさ]によって[提供|ていきょう]されることにもなります。";
+
     c.bench_function("parse to kanji and kana", |b| {
         let furigana = Furigana::new_unchecked(black_box(example));
         b.iter(|| {
             let _ = furigana.kana_str();
             let _ = furigana.kanji_str();
+        });
+    });
+
+    c.bench_function("furi merge kanji readings2 ", |b| {
+        b.iter(|| {
+            let _ = CodeFromatter::new(&black_box(Furigana(
+                "それは[音|おん][楽|がく][大学|だい|がく]です",
+            )))
+            .merge_kanji_parts()
+            .finish();
+        });
+    });
+
+    c.bench_function("furi merge kanji readings", |b| {
+        let furigana = Furigana(black_box(example3));
+        b.iter(|| {
+            let _ = CodeFromatter::new(&black_box(furigana))
+                .merge_kanji_parts()
+                .finish();
         });
     });
 

@@ -65,6 +65,7 @@ impl<'a> FuriParserGen<'a> {
 }
 
 impl<'a> Iterator for FuriParserGen<'a> {
+    /// (Part,IsKanji)
     type Item = (&'a str, bool);
 
     fn next(&mut self) -> Option<Self::Item> {

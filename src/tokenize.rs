@@ -75,6 +75,7 @@ mod test {
 
     #[test_case("朝に道を聞かば、夕べに死すとも可なり", Alphabet::Kanji, &["朝", "道", "聞", "夕", "死", "可"]; "Kanji")]
     #[test_case("朝に道を聞かば、夕べに死すとも可なり", Alphabet::kana(), &["に", "を", "かば", "べに", "すとも", "なり"]; "Hiragana")]
+    #[test_case("", Alphabet::kana(), &[]; "empty")]
     fn test_words_with_alphabet(inp: &str, alphabet: Alphabet, exp: &[&str]) {
         let collected: Vec<&str> = words_with_alphabet(inp, alphabet).collect();
         assert_eq!(collected, exp);
