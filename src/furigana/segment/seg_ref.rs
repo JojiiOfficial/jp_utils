@@ -23,7 +23,7 @@ impl<'a> SegmentRef<'a> {
 
     /// Creates a new ReadingPartRef with a value for kanji
     #[inline]
-    pub fn new_kanji(kana: &'a str, kanji: &'a str) -> Self {
+    pub fn new_kanji(kanji: &'a str, kana: &'a str) -> Self {
         Self::Kanji {
             kanji,
             readings: tiny_vec!([&'a str;1] => kana),
@@ -91,7 +91,7 @@ impl<'a> SegmentRef<'a> {
 
         if readings.len() == 1 {
             // Fallback where all kanji get the first reading assigned
-            return Some(SegmentRef::new_kanji(readings[0], kanji));
+            return Some(SegmentRef::new_kanji(kanji, readings[0]));
         } else if checked && kanji.chars().count() != readings.len() {
             // Malformed kanji string
             return None;
@@ -226,6 +226,7 @@ impl<'a> From<&'a Segment> for SegmentRef<'a> {
 }
 
 impl<'a> From<&'a str> for SegmentRef<'a> {
+    /// Kana
     #[inline]
     fn from(s: &'a str) -> Self {
         Self::new_kana(s)
@@ -233,10 +234,12 @@ impl<'a> From<&'a str> for SegmentRef<'a> {
 }
 
 impl<'a> From<(&'a str, Option<&'a str>)> for SegmentRef<'a> {
+    /// (Kanji, reading) when Some()
+    /// (Kana, _) when None
     #[inline]
     fn from(s: (&'a str, Option<&'a str>)) -> Self {
-        if let Some(kanji) = s.1 {
-            Self::new_kanji(s.0, kanji)
+        if let Some(kana) = s.1 {
+            Self::new_kanji(s.0, kana)
         } else {
             Self::Kana(s.0)
         }
@@ -244,16 +247,16 @@ impl<'a> From<(&'a str, Option<&'a str>)> for SegmentRef<'a> {
 }
 
 impl<'a> From<(&'a str, Vec<&'a str>)> for SegmentRef<'a> {
+    /// (Kanji, readings) when |v| > 0
+    /// (Kana, _) when |v| == 0
     #[inline]
     fn from(s: (&'a str, Vec<&'a str>)) -> Self {
-        Self::Kanji {
-            kanji: s.0,
-            readings: s.1.into_iter().collect(),
-        }
+        Self::new_kanji_mult(s.0, &s.1)
     }
 }
 
 impl<'a> From<(&'a str, &'a str)> for SegmentRef<'a> {
+    /// (Kanji, Kana)
     #[inline]
     fn from(s: (&'a str, &'a str)) -> Self {
         Self::new_kanji(s.0, s.1)

@@ -46,7 +46,7 @@ impl Segment {
 
     /// Returns the reading part as a reference
     #[inline]
-    pub fn as_ref_part(&self) -> SegmentRef {
+    pub fn as_ref(&self) -> SegmentRef {
         self.into()
     }
 
@@ -171,6 +171,7 @@ impl From<String> for Segment {
 }
 
 impl From<(String, String)> for Segment {
+    /// (Kanji, kana)
     #[inline]
     fn from(s: (String, String)) -> Self {
         Self::new_kanji(s.0, s.1)
@@ -181,6 +182,8 @@ impl<S> From<(S, Vec<S>)> for Segment
 where
     S: AsRef<str>,
 {
+    /// (Kanji, readings) when |v| > 0
+    /// (Kana, _) when |v| == 0
     #[inline]
     fn from(s: (S, Vec<S>)) -> Self {
         if s.1.is_empty() {
@@ -196,10 +199,12 @@ where
 }
 
 impl From<(String, Option<String>)> for Segment {
+    /// (Kanji, reading) when Some()
+    /// (Kana, _) when None
     #[inline]
     fn from(s: (String, Option<String>)) -> Self {
-        if let Some(kanji) = s.1 {
-            Self::new_kanji(kanji, s.0)
+        if let Some(kana) = s.1 {
+            Self::new_kanji(s.0, kana)
         } else {
             Self::Kana(s.0)
         }
@@ -207,6 +212,7 @@ impl From<(String, Option<String>)> for Segment {
 }
 
 impl From<&str> for Segment {
+    /// Kana
     #[inline]
     fn from(s: &str) -> Self {
         Self::new_kana(s.to_string())
@@ -214,6 +220,7 @@ impl From<&str> for Segment {
 }
 
 impl From<(&str, &str)> for Segment {
+    /// (Kanji, kana)
     #[inline]
     fn from(s: (&str, &str)) -> Self {
         Self::new_kanji(s.0.to_string(), s.1.to_string())
@@ -221,10 +228,12 @@ impl From<(&str, &str)> for Segment {
 }
 
 impl From<(&str, Option<&str>)> for Segment {
+    /// (Kanji, reading) when Some()
+    /// (Kana, _) when None
     #[inline]
     fn from(s: (&str, Option<&str>)) -> Self {
-        if let Some(kanji) = s.1 {
-            Self::new_kanji(s.0.to_string(), kanji.to_string())
+        if let Some(kana) = s.1 {
+            Self::new_kanji(s.0.to_string(), kana.to_string())
         } else {
             Self::Kana(s.0.to_string())
         }

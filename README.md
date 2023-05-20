@@ -3,7 +3,7 @@ Rust crate providing some handy tools for working with Japanese text
 
 # Usage
 ```
-jp_utils = "0.1.1"
+jp_utils = "0.1.2"
 ```
 
 # Examples
@@ -42,7 +42,7 @@ assert_eq!(
     Some(SegmentRef::new_kanji_mult("日本", &["に", "ほん"]))
 );
 assert_eq!(iter.next(), Some(SegmentRef::new_kana("が")));
-assert_eq!(iter.next(), Some(SegmentRef::new_kanji("す", "好")));
+assert_eq!(iter.next(), Some(SegmentRef::new_kanji("好", "す")));
 assert_eq!(iter.next(), Some(SegmentRef::new_kana("きです")));
 assert_eq!(iter.next(), None);
 

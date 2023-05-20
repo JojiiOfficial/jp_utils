@@ -2,9 +2,13 @@
 description = "Utils for working with Japanese text."
 name = "jp_utils"
 authors = ["jojii <jojii@gmx.net>"]
-version = "0.1.1"
+keywords = ["japanese","languages","parse","charset"]
+categories = ["text-processing"]
+version = "0.1.3"
 edition = "2021"
+repository = "https://github.com/JojiiOfficial/jp_utils"
 license = "AGPL-3.0"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
