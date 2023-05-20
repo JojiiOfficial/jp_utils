@@ -128,15 +128,9 @@ where
     }
 
     /// Returns a ReadingOwned representing the reading of the sequence.
+    #[inline]
     pub fn to_reading(&self) -> Reading {
-        if self.has_kanji() {
-            Reading::new_with_kanji(
-                self.kana_reading().to_string(),
-                self.kanji_reading().to_string(),
-            )
-        } else {
-            Reading::new(self.kana_reading().to_string())
-        }
+        Reading::from_iter(self.parts.iter())
     }
 }
 

@@ -74,6 +74,7 @@ mod test {
     use crate::furigana::segment::{encode, AsSegment, Segment};
     use crate::furigana::seq::FuriSequence;
     use crate::furigana::Furigana;
+    use crate::JapaneseExt;
     use std::fs::File;
     use std::io::{BufRead, BufReader};
     use std::str::FromStr;
@@ -90,7 +91,6 @@ mod test {
     fn test_parse_furigana(furi: &str) {
         let parsed = FuriParser::new(furi).to_vec().unwrap();
         let encoded = encode::sequence(&parsed);
-        // assert_eq!(furi, encoded);
         assert_eq!(encoded, furi);
         let seq = FuriSequence::from(parsed);
         assert_eq!(Furigana(furi).to_reading(), seq.to_reading());
@@ -139,7 +139,28 @@ mod test {
             assert_eq!(encoded, line);
 
             let seq = FuriSequence::from(parsed);
-            assert_eq!(seq.to_reading(), Furigana(line).to_reading());
+            assert_eq!(seq.to_reading(), Furigana(&line).to_reading());
+
+            assert_eq!(
+                Furigana(&line).to_reading().kana(),
+                Furigana(&line).kana_str()
+            );
+
+            let reading = Furigana(&line)
+                .code_formatter()
+                .merge_kanji_parts()
+                .finish()
+                .to_reading();
+            if reading.kana() != Furigana(&line).kana_str() {
+                println!("furi: {:?}", Furigana(&line).raw());
+                println!("old: {:?}", Furigana(&line).kana_str());
+                println!("new: {:?}", reading.kana());
+                panic!("err: {line:?}");
+            }
+            // assert_eq!(reading.kana(), Furigana(&line).kana_str());
+            if line.has_kanji() {
+                assert_eq!(reading.kanji().unwrap(), Furigana(&line).kanji_str());
+            }
         }
     }
 }

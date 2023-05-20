@@ -65,8 +65,8 @@ impl<'a> FuriToReadingParser<'a> {
     /// Parses furigana to kanji and kana at the same time. If you need both kana and kanji, use
     /// this function instead of calling parsing twice.
     pub fn parse_kanji_and_kana(furi: &str) -> (String, Option<String>) {
-        let mut kana = String::with_capacity(furi.len());
-        let mut kanji = String::new();
+        let mut kana_buf = String::with_capacity(furi.len());
+        let mut kanji_buf = String::new();
 
         let mut has_kanji = false;
 
@@ -74,25 +74,37 @@ impl<'a> FuriToReadingParser<'a> {
             if is_kanji {
                 if !has_kanji {
                     has_kanji = true;
-                    kanji = String::with_capacity(furi.len().saturating_sub(10));
-                    kanji.push_str(&kana);
+                    kanji_buf = String::with_capacity(furi.len().saturating_sub(10));
+                    kanji_buf.push_str(&kana_buf);
                 }
                 let mut part = txt[1..txt.len() - 1].split('|');
 
                 // Safety
                 // split always returns at least one element
-                kanji.push_str(unsafe { &part.next().unwrap_unchecked() });
+                let kanji = unsafe { &part.next().unwrap_unchecked() };
+                let first_kana = part.next().unwrap();
 
-                kana.extend(part);
+                if first_kana.trim().is_empty() {
+                    kana_buf.push_str(kanji);
+                    kanji_buf.push_str(kanji);
+                    // kana_buf.push_str(first_kana);
+                    /* kanji_buf.push_str(kanji);
+                    kana_buf.push_str(first_kana);
+                    kana_buf.extend(part); */
+                } else {
+                    kanji_buf.push_str(kanji);
+                    kana_buf.push_str(first_kana);
+                    kana_buf.extend(part);
+                }
             } else {
-                kana.push_str(txt);
+                kana_buf.push_str(txt);
                 if has_kanji {
-                    kanji.push_str(txt);
+                    kanji_buf.push_str(txt);
                 }
             }
         }
 
-        (kana, has_kanji.then_some(kanji))
+        (kana_buf, has_kanji.then_some(kanji_buf))
     }
 
     /// Runs the parser and writes all sub strings into `w`.
@@ -196,5 +208,13 @@ mod test {
     fn test_parse_to_kanji(furi: &str, out: &str) {
         let parsed = FuriToReadingParser::new(furi, false).parse();
         assert_eq!(parsed, out);
+    }
+
+    #[test]
+    fn test_empty_kanji_block() {
+        let s =
+            "[高校生|こう|こう|せい]の[時|とき]は[毎朝|まい|あさ][6|][時|じ]に[起|お]きていた。";
+        let (kana, _kanji) = FuriToReadingParser::parse_kanji_and_kana(s);
+        assert_eq!(kana, "こうこうせいのときはまいあさ6じにおきていた。");
     }
 }

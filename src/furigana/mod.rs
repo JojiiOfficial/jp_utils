@@ -21,6 +21,8 @@ use std::{
     ops::{Deref, Range},
 };
 
+use self::cformat::CodeFormatter;
+
 /// A struct that holds encoded furigana data in a string. Such an element can be created by directly wrapping around
 /// a [`String`] or using the `new()` function which has the benefit that the furigana gets validated.
 /// Valid encoded furigana looks like this: `[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]です。`
@@ -219,6 +221,12 @@ impl<T> Furigana<T> {
     #[inline]
     pub fn new_unchecked(furi: T) -> Self {
         Self(furi)
+    }
+
+    /// Returns an object that can work on the format of the furigana object.
+    #[inline]
+    pub fn code_formatter(&self) -> CodeFormatter<T> {
+        CodeFormatter::new(self)
     }
 }
 

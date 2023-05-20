@@ -13,6 +13,8 @@ pub use seg_ref::SegmentRef;
 use std::str::FromStr;
 use tinyvec::{tiny_vec, TinyVec};
 
+use self::as_segment::AsSegmentMut;
+
 /// Represents a single segment of a furigana string. This can be a kana or kanji segment. Kanji
 /// segments also save the assigned kana readings.
 #[derive(Clone, PartialEq, Debug, Eq, Hash)]
@@ -133,7 +135,9 @@ impl AsSegment for Segment {
             Segment::Kanji { kanji: _, readings } => Some(readings),
         }
     }
+}
 
+impl AsSegmentMut for Segment {
     /// Sets the kanji reading or converts it to one
     fn set_kanji(&mut self, new_kanji: String) {
         match self {

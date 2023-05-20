@@ -3,7 +3,7 @@ use std::str::FromStr;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use jp_utils::{
     furigana::{
-        cformat::CodeFromatter, compare::FuriComparator, parse::FuriParser, seq::FuriSequence,
+        cformat::CodeFormatter, compare::FuriComparator, parse::FuriParser, seq::FuriSequence,
         Furigana,
     },
     reading::Reading,
@@ -26,7 +26,7 @@ fn index_item_decode(c: &mut Criterion) {
 
     c.bench_function("furi merge kanji readings2 ", |b| {
         b.iter(|| {
-            let _ = CodeFromatter::new(&black_box(Furigana(
+            let _ = CodeFormatter::new(&black_box(Furigana(
                 "それは[音|おん][楽|がく][大学|だい|がく]です",
             )))
             .merge_kanji_parts()
@@ -37,7 +37,7 @@ fn index_item_decode(c: &mut Criterion) {
     c.bench_function("furi merge kanji readings", |b| {
         let furigana = Furigana(black_box(example3));
         b.iter(|| {
-            let _ = CodeFromatter::new(&black_box(furigana))
+            let _ = CodeFormatter::new(&black_box(furigana))
                 .merge_kanji_parts()
                 .finish();
         });

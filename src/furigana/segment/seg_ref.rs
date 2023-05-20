@@ -1,4 +1,4 @@
-use super::{AsSegment, Segment};
+use super::{as_segment::AsSegmentMut, AsSegment, Segment};
 use tinyvec::{tiny_vec, TinyVec};
 
 /// Same as [`Segment`] but borrowed
@@ -109,6 +109,13 @@ impl<'a> SegmentRef<'a> {
             Ok(SegmentRef::Kana(str))
         }
     }
+
+    pub fn convert_to_kana(self) -> Self {
+        if let Some(kanji) = self.as_kanji() {
+            return Self::new_kana(kanji);
+        }
+        self
+    }
 }
 
 impl<'a> ToString for SegmentRef<'a> {
@@ -170,6 +177,16 @@ impl<'a> AsSegment for SegmentRef<'a> {
         }
     }
 
+    #[inline]
+    fn kana_reading(&self) -> String {
+        match self {
+            SegmentRef::Kana(k) => k.to_string(),
+            SegmentRef::Kanji { kanji: _, readings } => readings.join(""),
+        }
+    }
+}
+
+impl<'a> AsSegmentMut for SegmentRef<'a> {
     /// Sets the kanji reading or converts it to one
     fn set_kanji(&mut self, s: Self::StrType) {
         match self {
@@ -191,14 +208,6 @@ impl<'a> AsSegment for SegmentRef<'a> {
     fn add_reading(&mut self, r: Self::StrType) {
         if let SegmentRef::Kanji { kanji: _, readings } = self {
             readings.push(r);
-        }
-    }
-
-    #[inline]
-    fn kana_reading(&self) -> String {
-        match self {
-            SegmentRef::Kana(k) => k.to_string(),
-            SegmentRef::Kanji { kanji: _, readings } => readings.join(""),
         }
     }
 }

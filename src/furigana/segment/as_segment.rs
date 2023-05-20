@@ -58,15 +58,6 @@ pub trait AsSegment {
         Some(kanji.chars().count() == readings.len())
     }
 
-    /// Sets the kanji. Converts a Kana reading to a kanji reading
-    fn set_kanji(&mut self, s: Self::StrType);
-
-    /// Sets the kana text to `s`. Does nothing on a kanji reading
-    fn set_kana(&mut self, s: Self::StrType);
-
-    /// Adds a new reading to a kanji reading. Does nothing on a kana reading
-    fn add_reading(&mut self, r: Self::StrType);
-
     /// Encodes the part into a string
     fn encode(&self) -> String {
         if let Some(kanji) = self.as_kanji() {
@@ -147,6 +138,59 @@ pub trait AsSegment {
         // A reading is either a kanji or kana. This is unreachable if its not kanji.
         let kanji = unsafe { self.as_kanji().unwrap_unchecked().as_ref() };
         kanji == reading_kanji && self.kana_reading() == reading.kana()
+    }
+}
+
+pub trait AsSegmentMut: AsSegment {
+    /// Sets the kanji. Converts a Kana reading to a kanji reading
+    fn set_kanji(&mut self, s: Self::StrType);
+
+    /// Sets the kana text to `s`. Does nothing on a kanji reading
+    fn set_kana(&mut self, s: Self::StrType);
+
+    /// Adds a new reading to a kanji reading. Does nothing on a kana reading
+    fn add_reading(&mut self, r: Self::StrType);
+}
+
+impl<'a, S> AsSegment for &'a S
+where
+    S: AsSegment,
+{
+    type StrType = S::StrType;
+
+    #[inline]
+    fn is_empty(&self) -> bool {
+        (*self).is_empty()
+    }
+
+    #[inline]
+    fn is_kana(&self) -> bool {
+        (*self).is_kana()
+    }
+
+    #[inline]
+    fn is_kanji(&self) -> bool {
+        (*self).is_kanji()
+    }
+
+    #[inline]
+    fn as_kana(&self) -> Option<&Self::StrType> {
+        (*self).as_kana()
+    }
+
+    #[inline]
+    fn as_kanji(&self) -> Option<&Self::StrType> {
+        (*self).as_kanji()
+    }
+
+    #[inline]
+    fn kana_reading(&self) -> String {
+        (*self).kana_reading()
+    }
+
+    #[inline]
+    fn readings(&self) -> Option<&TinyVec<[Self::StrType; 1]>> {
+        (*self).readings()
     }
 }
 
