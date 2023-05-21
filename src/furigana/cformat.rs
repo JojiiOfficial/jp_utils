@@ -98,16 +98,20 @@ where
         let (str, buf) = self.get_src();
         let mut enc = FuriEncoder::new(buf);
 
-        for seg in &Furigana(str) {
-            if let Some(kana) = seg.as_kana() {
-                enc.write_kana(kana);
+        for (sub, is_kanji) in Furigana(str).gen_parser() {
+            if !is_kanji {
+                enc.write_kana(sub);
                 continue;
             }
+            let seg = UncheckedFuriParser::from_seg_str(sub, is_kanji);
 
             let kanji = seg.as_kanji().unwrap();
             let readings = seg.readings().unwrap();
-            if readings.is_empty() || readings[0].is_empty() {
+            if readings.len() == 1 && readings[0].is_empty() {
                 enc.write_kana(kanji);
+                continue;
+            } else if readings.len() == 0 {
+                enc.write_kana(sub);
                 continue;
             }
 
@@ -168,6 +172,12 @@ where
 
             // Only kanji parts from here!
             let kanji = i.as_kanji().unwrap();
+            let readings = i.readings().unwrap();
+
+            if readings.is_empty() {
+                buf.push_str(sub);
+                continue;
+            }
 
             // Push empty kanjis as new empty kanji.
             if empty_kanji {
@@ -196,7 +206,7 @@ where
             buf.push_str(kanji);
 
             // Extend the reading buffer with the current kanjis readings.
-            for reading in i.readings().into_iter().flatten() {
+            for reading in readings {
                 merge_buf.push_str(reading);
                 merge_buf.push('|');
             }
@@ -254,6 +264,10 @@ mod test {
     )]
     #[test_case("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。",
     "[2|][x|えっくす]+[1|]の[定義域|てい|ぎ|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。"; "special")]
+    #[test_case(
+        "[永遠|えい|えん]にあなたのものです。 [アーメン]",
+        "[永遠|えい|えん]にあなたのものです。 [アーメン]"; "brackets"
+    )]
     fn test_merge_parts(src: &str, dst: &str) {
         let furi = Furigana(src);
         let res = furi.code_formatter().merge_kanji_parts().finish();
@@ -292,6 +306,10 @@ mod test {
     #[test_case("[毎朝|まい|あさ][6|][時|じ]に", "[毎朝|まい|あさ]6[時|じ]に";"2")]
     #[test_case("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。",
     "2[x|えっくす]+1の[定義|てい|ぎ][域|いき]が[A|えい]=[1,2]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [3,5]となる。"; "special")]
+    #[test_case(
+        "[永遠|えい|えん]にあなたのものです。 [アーメン]",
+        "[永遠|えい|えん]にあなたのものです。 [アーメン]"; "brackets"
+    )]
     fn test_remove_empty_kanji(s: &str, exp: &str) {
         let furi = Furigana(s);
         let out = CodeFormatter::new(&furi).remove_empty_kanji().finish();

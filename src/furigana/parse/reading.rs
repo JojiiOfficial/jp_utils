@@ -140,10 +140,16 @@ impl<'a> FuriToReadingParser<'a> {
     }
 
     /// Parses the given block as kanji.
-    fn accept_kanji<W>(&self, block: &str, w: W)
+    fn accept_kanji<W>(&self, block: &str, mut w: W)
     where
         W: FnMut(&str),
     {
+        // Blocks like `[アニメ]` should not be parsed as kanji.
+        if !block.contains('|') {
+            w(block);
+            return;
+        }
+
         let block_inner = &block[1..block.len() - 1];
 
         if self.to_kana {
@@ -206,6 +212,10 @@ mod test {
 
     #[test_case("[音楽|おん|がく]が[好|す]き","おんがくがすき"; "parse to kana1")]
     #[test_case("[2|][x|えっくす]+[1|]の[定義|てい|ぎ]が[A|えい]=[[1|],[2|]] = [[3|],[5|]]","2えっくす+1のていぎがえい=[1,2] = [3,5]"; "with brackets")]
+    #[test_case(
+        "[永遠|えい|えん]にあなたのものです。 [アーメン]",
+        "えいえんにあなたのものです。 [アーメン]"; "brackets"
+    )]
     fn test_parse_to_kana(furi: &str, out: &str) {
         let parsed = FuriToReadingParser::new(furi, true).parse();
         assert_eq!(parsed, out);
