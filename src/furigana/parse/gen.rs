@@ -49,8 +49,9 @@ impl<'a> FuriParserGen<'a> {
             let Some(prev_bracket) = self.block_start.take() else { continue };
 
             let kanji = &self.str[prev_bracket..cur_bracket + 1];
+            // println!("kanji: {kanji}");
 
-            let mut to_return = Some((kanji, true));
+            let mut to_return = Some((kanji, kanji.contains('|')));
 
             if self.kana_start < prev_bracket {
                 self.buf = to_return.take();

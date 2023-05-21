@@ -87,6 +87,7 @@ mod test {
     #[test_case("[音楽おん|がく]が[好す")]
     #[test_case("この[人|ひと]が[嫌|きら]いです。")]
     #[test_case("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。"; "with brackets")]
+    #[test_case("[永遠|えい|えん]にあなたのものです。 [アーメン]"; "block")]
     fn test_parse_furigana(furi: &str) {
         let parsed = FuriParser::new(furi).to_vec().unwrap();
         // let encoded = encode::sequence(&parsed);

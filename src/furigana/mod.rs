@@ -492,9 +492,4 @@ mod test {
     fn test_is_empty() {
         assert!(Furigana("").is_empty())
     }
-
-    #[test]
-    fn test_validate() {
-        assert!(Furigana::new("音楽][]").is_err())
-    }
 }
