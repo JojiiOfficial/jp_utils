@@ -1,13 +1,12 @@
-use std::str::FromStr;
-
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use jp_utils::{
     furigana::{
-        cformat::CodeFormatter, compare::FuriComparator, parse::FuriParser, seq::FuriSequence,
-        Furigana,
+        cformat::CodeFormatter, compare::FuriComparator, parse::FuriParser,
+        segment::encoder::FuriEncoder, seq::FuriSequence, Furigana,
     },
     reading::Reading,
 };
+use std::str::FromStr;
 
 fn index_item_decode(c: &mut Criterion) {
     let example = "[水|みず]、ガス、[電気|でん|き]が[遠|とお]くから[運|はこ]ばれて[我々|われわれ]の[要求|よう|きゅう]を[満|み]たすためになんなく[供給|きょう|きゅう]されているように、いつか[画像|が|ぞう]と[音楽|おん|がく]はちょっとした[合図|あい|ず]みたいなシンプルな[手|て]の[仕草|し|ぐさ]によって[提供|てい|きょう]されることにもなります。";
@@ -15,6 +14,26 @@ fn index_item_decode(c: &mut Criterion) {
     let example2 = "[水|みず]、ガス、[電気|でん|き]が[遠|とお]くから[運|はこ]ばれて[我々|われわれ]の[要求|よう|きゅう]を[満|み]たすためになんなく[供給|きょう|きゅう]されているように、いつか[画像|が|ぞう]と[音楽|おん|がく]はちょっとした[合図|あい|ず]みたいなシンプルな[手|て]の[仕草|し|ぐさ]によって[提供|ていきょう]されることにもなります。";
 
     let example3 = "[水|みず]、ガス、[電気|でん|き]が[遠|とお]くから[運|はこ]ばれて[我々|われわれ]の[要求|よう|きゅう]を[満|み]たすためになんなく[供|きょう][給|きゅう]されているように、いつか[画像|が|ぞう]と[音楽|おん|がく]はちょっとした[合|あい][図|ず]みたいなシンプルな[手|て]の[仕|し][草|ぐさ]によって[提供|ていきょう]されることにもなります。";
+
+    let parts = Furigana("[水|みず]、ガス、[電気|でん|き]が[遠|とお]くから[運|はこ]ばれて[我々|われわれ]の[要求|よう|きゅう]を[満|み]たすためになんなく[供給|きょう|きゅう]されているように、いつか[画像|が|ぞう]と[音楽|おん|がく]はちょっとした[合図|あい|ず]みたいなシンプルな[手|て]の[仕草|し|ぐさ]によって[提供|てい|きょう]されることにもなります。").as_segments_ref();
+
+    c.bench_function("encode new", |b| {
+        let _ = b.iter(|| {
+            let mut buf = String::new();
+            let mut enc = FuriEncoder::new(&mut buf);
+            for part in parts.iter() {
+                enc.write_seg(part);
+            }
+        });
+    });
+
+    c.bench_function("encode new iter", |b| {
+        let _ = b.iter(|| {
+            let mut buf = String::new();
+            let mut enc = FuriEncoder::new(&mut buf);
+            enc.extend(parts.iter());
+        });
+    });
 
     c.bench_function("parse to kanji and kana", |b| {
         let furigana = Furigana::new_unchecked(black_box(example));

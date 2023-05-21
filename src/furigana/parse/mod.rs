@@ -71,7 +71,7 @@ impl<'a> Iterator for FuriParser<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::furigana::segment::{encode, AsSegment, Segment};
+    use crate::furigana::segment::{AsSegment, Segment};
     use crate::furigana::seq::FuriSequence;
     use crate::furigana::Furigana;
     use crate::JapaneseExt;
@@ -90,7 +90,8 @@ mod test {
     #[test_case("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。"; "with brackets")]
     fn test_parse_furigana(furi: &str) {
         let parsed = FuriParser::new(furi).to_vec().unwrap();
-        let encoded = encode::sequence(&parsed);
+        // let encoded = encode::sequence(&parsed);
+        let encoded = Furigana::from_iter(parsed.iter());
         assert_eq!(encoded, furi);
         let seq = FuriSequence::from(parsed);
         assert_eq!(Furigana(furi).to_reading(), seq.to_reading());
@@ -135,7 +136,8 @@ mod test {
                 continue;
             }
             let parsed = parsed.unwrap();
-            let encoded = encode::sequence(&parsed);
+            let encoded = Furigana::from_iter(parsed.iter());
+            // let encoded = encode::sequence(&parsed);
             assert_eq!(encoded, line);
 
             let seq = FuriSequence::from(parsed);

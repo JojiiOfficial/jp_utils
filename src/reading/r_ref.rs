@@ -51,10 +51,12 @@ impl<'a> ReadingRef<'a> {
     /// Encodes the reading to furigana.
     #[cfg(feature = "furigana")]
     pub fn encode(&self) -> Furigana<String> {
-        use crate::furigana::segment::encode;
+        use crate::furigana::segment::encoder::FuriEncoder;
 
         if let Some(kanji) = self.kanji() {
-            Furigana(encode::single_block(kanji, self.kana))
+            let mut buf = String::new();
+            FuriEncoder::new(&mut buf).write_block(kanji, self.kana);
+            Furigana(buf)
         } else {
             Furigana(self.kana.to_string())
         }

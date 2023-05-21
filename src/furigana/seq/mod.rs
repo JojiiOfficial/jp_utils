@@ -7,7 +7,7 @@ use self::{
 };
 use super::{
     parse::FuriParser,
-    segment::{encode, AsSegment, Segment, SegmentRef},
+    segment::{AsSegment, Segment, SegmentRef},
     Furigana,
 };
 use crate::reading::Reading;
@@ -118,7 +118,7 @@ where
     /// Encodes the sequence to a parsable furigana string.
     #[inline]
     pub fn encode(&self) -> Furigana<String> {
-        encode::sequence(self.iter())
+        Furigana::from_iter(self.iter())
     }
 
     /// Returns `true` if the FuriSequence has at least one kanji part.

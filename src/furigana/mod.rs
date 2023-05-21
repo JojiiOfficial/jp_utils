@@ -21,7 +21,7 @@ use std::{
     ops::{Deref, Range},
 };
 
-use self::cformat::CodeFormatter;
+use self::{cformat::CodeFormatter, segment::encoder::FuriEncoder};
 
 /// A struct that holds encoded furigana data in a string. Such an element can be created by directly wrapping around
 /// a [`String`] or using the `new()` function which has the benefit that the furigana gets validated.
@@ -292,17 +292,20 @@ impl<T: AsRef<str>> From<Furigana<T>> for Vec<Segment> {
     }
 }
 
-impl<S: AsRef<str>> FromIterator<S> for Furigana<String> {
+impl<S: AsSegment> FromIterator<S> for Furigana<String> {
+    #[inline]
     fn from_iter<I: IntoIterator<Item = S>>(iter: I) -> Self {
-        iter.into_iter().fold(Furigana::default(), |mut i, f| {
-            i.0.push_str(f.as_ref());
-            i
-        })
+        let mut buf = String::new();
+        FuriEncoder::new(&mut buf).extend(iter);
+        Furigana(buf)
     }
 }
 
 impl<S: AsSegment> Extend<S> for Furigana<String> {
+    #[inline]
     fn extend<I: IntoIterator<Item = S>>(&mut self, iter: I) {
+        let iter = iter.into_iter();
+        self.0.reserve(iter.size_hint().0 * 6);
         for s in iter {
             self.push_segment(s);
         }

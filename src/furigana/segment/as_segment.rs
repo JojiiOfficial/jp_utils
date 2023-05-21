@@ -1,6 +1,5 @@
-use super::{encode, FlattenIter, ReadingIter};
+use super::{encoder::FuriEncoder, FlattenIter, ReadingIter};
 use crate::reading::{traits::AsReadingRef, Reading};
-use itertools::Itertools;
 use tinyvec::TinyVec;
 
 /// Trait defining common behavior for ReadingParts
@@ -58,24 +57,24 @@ pub trait AsSegment {
         Some(kanji.chars().count() == readings.len())
     }
 
-    /// Encodes the part into a string
-    fn encode(&self) -> String {
-        if let Some(kanji) = self.as_kanji() {
-            let kanji = kanji.as_ref();
-            let readings = self.readings().unwrap();
+    /// Encodes the part into a string. This shouldn't be used in loops as it allocates a new
+    /// string each time. Use [`FuriEncoder`] [`encode_into`] if you want to encode multiple segments or
+    fn encode(&self) -> String
+    where
+        Self: Sized,
+    {
+        let mut buf = String::new();
+        self.encode_into(&mut buf);
+        buf
+    }
 
-            if self.detailed_readings().unwrap() {
-                encode::multi_block(kanji, readings)
-            } else {
-                let readings_combined = readings.iter().map(|i| i.as_ref()).join("");
-                encode::single_block(kanji, readings_combined)
-            }
-        } else if let Some(kana) = self.as_kana() {
-            kana.as_ref().to_string()
-        } else {
-            // A part is always either a kanji or a kana part
-            unreachable!()
-        }
+    /// Encocdes the part into a buffer.
+    #[inline]
+    fn encode_into(&self, buf: &mut String)
+    where
+        Self: Sized,
+    {
+        FuriEncoder::new(buf).write_seg(self);
     }
 
     /// Returns an iterator over flattened readings

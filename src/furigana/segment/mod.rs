@@ -1,5 +1,6 @@
 pub mod as_segment;
 pub mod encode;
+pub mod encoder;
 pub mod iter;
 mod seg_ref;
 
