@@ -115,6 +115,23 @@ where
         self.into()
     }
 
+    /// Returns an iterator over all kana segments.
+    #[inline]
+    pub fn kana_segments(&self) -> impl Iterator<Item = SegmentRef> {
+        self.gen_parser()
+            .filter(|i| !i.1)
+            .map(|i| SegmentRef::Kana(i.0))
+    }
+
+    /// Returns an iterator over all kanji segments.
+    #[inline]
+    pub fn kanji_segments(&self) -> impl Iterator<Item = SegmentRef> {
+        // FuriParser::new(self.raw()).unchecked()
+        self.gen_parser()
+            .filter(|i| i.1)
+            .map(|i| UncheckedFuriParser::from_seg_str(i.0, i.1))
+    }
+
     /// Returns an iterator over all segments of the furigana.
     #[inline]
     pub fn segments(&self) -> UncheckedFuriParser {
@@ -459,6 +476,15 @@ mod test {
                 SegmentRef::new_kana("が"),
                 SegmentRef::new_kanji_mult("大好", &["だい", "す"]),
             ]
+        );
+
+        assert_eq!(
+            furi.kanji_segments().collect::<Vec<_>>(),
+            furi.segments().filter(|i| i.is_kanji()).collect::<Vec<_>>()
+        );
+        assert_eq!(
+            furi.kana_segments().collect::<Vec<_>>(),
+            furi.segments().filter(|i| i.is_kana()).collect::<Vec<_>>()
         );
     }
 
