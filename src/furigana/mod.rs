@@ -312,6 +312,13 @@ impl<S: AsSegment> Extend<S> for Furigana<String> {
     }
 }
 
+impl Into<String> for Furigana<String> {
+    #[inline]
+    fn into(self) -> String {
+        self.0
+    }
+}
+
 impl<T> Eq for Furigana<T> where T: AsRef<str> + PartialEq<T> {}
 
 impl<T, S> PartialEq<Furigana<S>> for Furigana<T>

@@ -1,3 +1,5 @@
+use crate::reading::traits::AsReadingRef;
+
 use super::AsSegment;
 
 /// An encoder fur furigana.
@@ -35,6 +37,18 @@ impl<'a> FuriEncoder<'a> {
         self.out.push('|');
         self.out.push_str(kana);
         self.out.push(']');
+    }
+
+    /// Writes a [`jp_utils::reading::Reading`] into the furi encoder.
+    ///
+    /// Note that `readings` can contain kana characters in their kanji strings.
+    pub fn write_reading<R: AsReadingRef>(&mut self, r: R) {
+        let r = r.as_reading_ref();
+        if let Some(kanji) = r.kanji() {
+            self.write_block(kanji, r.kana());
+        } else {
+            self.write_kana(r.kana());
+        }
     }
 
     /// Writes a kanji segment to the buffer.

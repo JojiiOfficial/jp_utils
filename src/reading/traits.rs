@@ -11,6 +11,16 @@ pub trait AsReadingRef {
     }
 }
 
+impl<R> AsReadingRef for &R
+where
+    R: AsReadingRef,
+{
+    #[inline]
+    fn as_reading_ref(&self) -> ReadingRef<'_> {
+        (*self).as_reading_ref()
+    }
+}
+
 impl AsReadingRef for (&String, Option<&String>) {
     #[inline]
     fn as_reading_ref(&self) -> ReadingRef {
