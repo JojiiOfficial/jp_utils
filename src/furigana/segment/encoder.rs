@@ -38,7 +38,7 @@ impl<'a> FuriEncoder<'a> {
     }
 
     /// Writes a kanji segment to the buffer.
-    fn write_kanji_seg<S: AsSegment>(&mut self, segment: S, kanji: &str) {
+    pub(crate) fn write_kanji_seg<S: AsSegment>(&mut self, segment: S, kanji: &str) {
         let readings = segment.readings().unwrap();
         let detailed = segment.detailed_readings().unwrap();
 

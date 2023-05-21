@@ -74,7 +74,6 @@ mod test {
     use crate::furigana::segment::{AsSegment, Segment};
     use crate::furigana::seq::FuriSequence;
     use crate::furigana::Furigana;
-    use crate::JapaneseExt;
     use std::fs::File;
     use std::io::{BufRead, BufReader};
     use std::str::FromStr;
@@ -148,11 +147,7 @@ mod test {
                 Furigana(&line).kana_str()
             );
 
-            let reading = Furigana(&line)
-                .code_formatter()
-                .merge_kanji_parts()
-                .finish()
-                .to_reading();
+            let reading = Furigana(&line).code_formatter().apply_all().to_reading();
             if reading.kana() != Furigana(&line).kana_str() {
                 println!("furi: {:?}", Furigana(&line).raw());
                 println!("old: {:?}", Furigana(&line).kana_str());
@@ -160,7 +155,7 @@ mod test {
                 panic!("err: {line:?}");
             }
             // assert_eq!(reading.kana(), Furigana(&line).kana_str());
-            if line.has_kanji() {
+            if reading.has_kanji() {
                 assert_eq!(reading.kanji().unwrap(), Furigana(&line).kanji_str());
             }
         }

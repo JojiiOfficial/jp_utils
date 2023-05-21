@@ -1,4 +1,5 @@
 pub mod as_segment;
+#[deprecated]
 pub mod encode;
 pub mod encoder;
 pub mod iter;

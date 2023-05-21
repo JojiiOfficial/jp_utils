@@ -82,7 +82,16 @@ impl<'a> FuriToReadingParser<'a> {
                 // Safety
                 // split always returns at least one element
                 let kanji = unsafe { &part.next().unwrap_unchecked() };
-                let first_kana = part.next().unwrap();
+                let first_kana = part.next();
+
+                // Stuff like [1,2]. They aren't kanji blocks so we'll treat them as kana
+                if first_kana.is_none() {
+                    kana_buf.push_str(txt);
+                    kanji_buf.push_str(txt);
+                    continue;
+                }
+
+                let first_kana = first_kana.unwrap();
 
                 if first_kana.trim().is_empty() {
                     kana_buf.push_str(kanji);
