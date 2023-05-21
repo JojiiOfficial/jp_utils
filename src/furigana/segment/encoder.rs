@@ -1,6 +1,5 @@
-use crate::reading::traits::AsReadingRef;
-
 use super::AsSegment;
+use crate::reading::traits::AsReadingRef;
 
 /// An encoder fur furigana.
 pub struct FuriEncoder<'a> {

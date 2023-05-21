@@ -40,12 +40,6 @@ impl<'a, T> CodeFormatter<'a, T> {
         self.lossy = true;
         self
     }
-
-    /// Finishes the formatting process and returns the resulting furigana value.
-    #[inline]
-    pub fn finish(self) -> Furigana<String> {
-        Furigana(self.buf)
-    }
 }
 
 impl<'a, T> CodeFormatter<'a, T>
@@ -67,14 +61,22 @@ where
         let (str, buf) = self.get_src();
         let mut enc = FuriEncoder::new(buf);
 
-        for seg in &Furigana(str) {
-            if let Some(kana) = seg.as_kana() {
-                enc.write_kana(kana);
+        for (sub, is_kanji) in Furigana(str).gen_parser() {
+            if !is_kanji {
+                enc.write_kana(sub);
                 continue;
             }
 
+            let seg = UncheckedFuriParser::from_seg_str(sub, is_kanji);
+
             let readings = seg.readings().unwrap();
             let kanji = seg.as_kanji().unwrap();
+
+            if readings.is_empty() {
+                enc.write_kana(sub);
+                continue;
+            }
+
             if seg.detailed_readings().unwrap() || readings.len() == 1 {
                 enc.write_kanji_seg(&seg, kanji);
                 continue;
@@ -220,6 +222,15 @@ where
             (&self.src, &mut self.buf)
         }
     }
+
+    /// Finishes the formatting process and returns the resulting furigana value.
+    #[inline]
+    pub fn finish(self) -> Furigana<String> {
+        if self.buf.is_empty() {
+            return self.src_furi.as_owned();
+        }
+        Furigana(self.buf)
+    }
 }
 
 #[cfg(test)]
@@ -296,6 +307,10 @@ mod test {
     #[test_case("[音楽おん|がく]が[好す", "[音楽おん|がく]が[好す")]
     #[test_case("この[人|ひと]が[嫌|きら]いです。", "この[人|ひと]が[嫌|きら]いです。")]
     #[test_case("[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。", "[2|][x|えっくす]+[1|]の[定義|てい|ぎ][域|いき]が[A|えい]=[[1|],[2|]]のとき、[f|えふ]の[値域|ち|いき]は[f|えふ]([A|えい]) = [[3|],[5|]]となる。"; "with brackets")]
+    #[test_case(
+        "[永遠|えい|えん]にあなたのものです。 [アーメン]",
+        "[永遠|えい|えん]にあなたのものです。 [アーメン]"; "brackets"
+    )]
     fn test_fix_kanji_blocks(s: &str, exp: &str) {
         let furi = Furigana(s);
         let out = CodeFormatter::new(&furi).fix_kanji_blocks().finish();
