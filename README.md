@@ -3,7 +3,7 @@ Rust crate providing some handy tools for working with Japanese text
 
 # Usage
 ```
-jp_utils = "0.1.2"
+jp_utils = "0.1.4"
 ```
 
 # Examples
