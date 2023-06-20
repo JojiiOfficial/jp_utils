@@ -1,0 +1,68 @@
+use super::{
+    kanji::{as_kanji::AsKanjiRef, Kanji},
+    s_ref::SegmentRef,
+    traits::{AsSegment, AsSegmentRef},
+};
+
+#[derive(Clone, Debug)]
+pub enum Segment {
+    Kana(String),
+    Kanji(Kanji),
+}
+
+impl Segment {
+    /// Create a new kana Segment.
+    #[inline]
+    pub fn new_kana(kana: String) -> Self {
+        Self::Kana(kana)
+    }
+
+    /// Create a new kanji Segment.
+    #[inline]
+    pub fn new_kanji(lits: String, readings: &[String]) -> Self {
+        Self::Kanji(Kanji::new(lits, readings))
+    }
+}
+
+impl<'a> AsSegmentRef<'a> for &'a Segment {
+    #[inline]
+    fn as_seg_ref(&self) -> SegmentRef<'a> {
+        match self {
+            Segment::Kana(k) => SegmentRef::Kana(k),
+            Segment::Kanji(k) => SegmentRef::Kanji(k.as_kanji_ref()),
+        }
+    }
+}
+
+impl AsSegment for Segment {
+    type StrType = String;
+    type KanjiType = Kanji;
+
+    #[inline]
+    fn is_kana(&self) -> bool {
+        matches!(self, Self::Kana(..))
+    }
+
+    #[inline]
+    fn is_kanji(&self) -> bool {
+        matches!(self, Self::Kanji(..))
+    }
+
+    #[inline]
+    fn as_kana(&self) -> Option<&Self::StrType> {
+        if let Self::Kana(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    fn as_kanji(&self) -> Option<&Self::KanjiType> {
+        if let Self::Kanji(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}

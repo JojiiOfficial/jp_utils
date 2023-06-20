@@ -9,6 +9,7 @@ pub mod furigana;
 pub mod alphabet;
 pub mod constants;
 pub mod counter;
+pub mod furi;
 pub mod radicals;
 pub mod reading;
 pub mod tokenize;

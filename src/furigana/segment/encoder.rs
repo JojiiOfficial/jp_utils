@@ -1,5 +1,5 @@
 use super::AsSegment;
-use crate::reading::traits::AsReadingRef;
+use crate::{furi::segment::kanji::as_kanji::AsKanjiSegment, reading::traits::AsReadingRef};
 
 /// An encoder fur furigana.
 pub struct FuriEncoder<'a> {
@@ -48,6 +48,25 @@ impl<'a> FuriEncoder<'a> {
         } else {
             self.write_kana(r.kana());
         }
+    }
+
+    /// Writes a kanji segment
+    pub fn write_kanji<K: AsKanjiSegment>(&mut self, k: K) {
+        let readings = k.readings();
+        let detailed = k.is_detailed();
+
+        self.out.push('[');
+        self.out.push_str(k.literals().as_ref());
+        self.out.push('|');
+
+        for (pos, reading) in readings.iter().enumerate() {
+            if pos > 0 && detailed {
+                self.out.push('|');
+            }
+            self.out.push_str(reading.as_ref());
+        }
+
+        self.out.push(']');
     }
 
     /// Writes a kanji segment to the buffer.
