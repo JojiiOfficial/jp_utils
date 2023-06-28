@@ -200,11 +200,12 @@ where
     }
 }
 
-/* impl<'a> From<&'a Furigana<&'a str>> for FuriSequence<SegmentRef<'a>> {
+impl<'a> From<&'a Furigana<&'a str>> for FuriSequence<SegmentRef<'a>> {
+    #[inline]
     fn from(value: &'a Furigana<&'a str>) -> Self {
         FuriSequence::parse_ref(value.raw()).unwrap()
     }
-} */
+}
 
 impl<T: Default> Default for FuriSequence<T>
 where
@@ -247,13 +248,22 @@ mod tests {
         assert_eq!(kana, expc);
     }
 
-    #[test_case("[音楽|おんがく]が[好|す]き", vec![("音楽",Some("おんがく")), ("が",None), ("好", Some("す")), ("き",None)]; "seq_to_kanji1")]
-    #[test_case("[音楽|おん|がく]が[好|す]き", vec![("音楽",vec!["おん","がく"]), ("が",vec![]), ("好", vec!["す"]), ("き",vec![])]; "seq_to_kanji2")]
-    fn test_iter(furi: &str, parts: Vec<impl Into<Segment>>) {
+    #[test_case("[音楽|おんがく]が[好|す]き", vec![
+        SegmentRef::new_kanji("音楽",&["おんがく"]),
+        SegmentRef::new_kana("が"),
+        SegmentRef::new_kanji("好",&["す"]),
+        SegmentRef::new_kana("き")]
+    ; "seq_to_kanji1")]
+    #[test_case("[音楽|おん|がく]が[好|す]き", vec![
+        SegmentRef::new_kanji("音楽",&["おん","がく"]),
+        SegmentRef::new_kana("が"),
+        SegmentRef::new_kanji("好",&["す"]),
+        SegmentRef::new_kana("き")]
+        ; "seq_to_kanji2")]
+    fn test_iter<'a>(furi: &'a str, parts: Vec<SegmentRef<'a>>) {
         let seq = FuriSequence::parse_ref(furi).unwrap();
         for (s_item, exp_item) in (&seq).into_iter().zip(parts.into_iter()) {
-            let exp_item = exp_item.into();
-            assert_eq!(&*s_item, exp_item);
+            assert_eq!(*&*s_item, exp_item);
         }
     }
 

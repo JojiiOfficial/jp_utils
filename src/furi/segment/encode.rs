@@ -1,5 +1,5 @@
-use super::AsSegment;
-use crate::{furi::segment::kanji::as_kanji::AsKanjiSegment, reading::traits::AsReadingRef};
+use super::{kanji::as_kanji::AsKanjiSegment, AsSegment};
+use crate::reading::traits::AsReadingRef;
 
 /// An encoder fur furigana.
 pub struct FuriEncoder<'a> {
@@ -16,8 +16,7 @@ impl<'a> FuriEncoder<'a> {
     /// Encodes a segment
     pub fn write_seg<S: AsSegment>(&mut self, segment: S) {
         if let Some(kanji) = segment.as_kanji() {
-            let kanji = kanji.as_ref();
-            self.write_kanji_seg(&segment, kanji);
+            self.write_kanji(kanji);
         } else if let Some(kana) = segment.as_kana() {
             self.write_kana(kana.as_ref());
         }
@@ -68,25 +67,6 @@ impl<'a> FuriEncoder<'a> {
 
         self.out.push(']');
     }
-
-    /// Writes a kanji segment to the buffer.
-    pub(crate) fn write_kanji_seg<S: AsSegment>(&mut self, segment: S, kanji: &str) {
-        let readings = segment.readings().unwrap();
-        let detailed = segment.detailed_readings().unwrap();
-
-        self.out.push('[');
-        self.out.push_str(kanji);
-        self.out.push('|');
-
-        for (pos, reading) in readings.iter().enumerate() {
-            if pos > 0 && detailed {
-                self.out.push('|');
-            }
-            self.out.push_str(reading.as_ref());
-        }
-
-        self.out.push(']');
-    }
 }
 
 impl<'a, S> Extend<S> for FuriEncoder<'a>
@@ -106,7 +86,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::furigana::Furigana;
+    use crate::furi::Furigana;
 
     use super::*;
     use test_case::test_case;

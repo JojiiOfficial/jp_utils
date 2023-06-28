@@ -4,7 +4,7 @@ use super::{
 };
 use tinyvec::TinyVec;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Kanji {
     lit: String,
     readings: TinyVec<[String; 1]>,
@@ -42,5 +42,12 @@ impl<'a> AsKanjiRef<'a> for &'a Kanji {
     #[inline]
     fn as_kanji_ref(&self) -> KanjiRef<'a> {
         self.as_ref()
+    }
+}
+
+impl<'a> PartialEq<KanjiRef<'a>> for Kanji {
+    #[inline]
+    fn eq(&self, other: &KanjiRef<'a>) -> bool {
+        other.eq(self)
     }
 }

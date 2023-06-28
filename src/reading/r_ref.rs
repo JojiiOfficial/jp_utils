@@ -1,7 +1,7 @@
 use super::traits::AsReadingRef;
 
 #[cfg(feature = "furigana")]
-use crate::furigana::Furigana;
+use crate::furi::Furigana;
 
 /// A borrowed version of [`super::Reading`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -51,7 +51,7 @@ impl<'a> ReadingRef<'a> {
     /// Encodes the reading to furigana.
     #[cfg(feature = "furigana")]
     pub fn encode(&self) -> Furigana<String> {
-        use crate::furigana::segment::encoder::FuriEncoder;
+        use crate::furi::segment::encode::FuriEncoder;
 
         if let Some(kanji) = self.kanji() {
             let mut buf = String::new();

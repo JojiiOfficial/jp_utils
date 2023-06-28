@@ -1,4 +1,3 @@
-pub mod check;
 mod gen;
 pub mod reading;
 pub mod unchecked;
@@ -71,11 +70,9 @@ impl<'a> Iterator for FuriParser<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::furigana::segment::{AsSegment, Segment};
-    use crate::furigana::seq::FuriSequence;
-    use crate::furigana::Furigana;
-    use std::fs::File;
-    use std::io::{BufRead, BufReader};
+    use crate::furi::segment::{AsSegment, Segment};
+    use crate::furi::seq::FuriSequence;
+    use crate::furi::Furigana;
     use std::str::FromStr;
     use test_case::test_case;
 

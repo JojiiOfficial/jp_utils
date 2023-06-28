@@ -1,5 +1,6 @@
+use crate::furi::segment::AsSegment;
+
 use super::FuriSequence;
-use crate::furigana::segment::AsSegment;
 use std::ops::Deref;
 
 /// Iterator over furigana sequences

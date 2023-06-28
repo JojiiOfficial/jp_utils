@@ -48,7 +48,7 @@ impl<'a> Iterator for UncheckedFuriParser<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::furigana::parse::FuriParser;
+    use crate::furi::parse::FuriParser;
     use test_case::test_case;
 
     #[test_case("[おんがく]"; "single kana in kanji brackets")]

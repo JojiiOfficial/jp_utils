@@ -1,10 +1,12 @@
+use std::str::FromStr;
+
 use super::{
     kanji::{as_kanji::AsKanjiRef, Kanji},
     s_ref::SegmentRef,
     traits::{AsSegment, AsSegmentRef},
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Segment {
     Kana(String),
     Kanji(Kanji),
@@ -64,5 +66,32 @@ impl AsSegment for Segment {
         } else {
             None
         }
+    }
+}
+
+impl FromStr for Segment {
+    type Err = ();
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // TODO: find a better way to do this
+        SegmentRef::from_str_checked(s).map(|i| i.to_owned())
+    }
+}
+
+impl<'a> PartialEq<SegmentRef<'a>> for Segment {
+    fn eq(&self, other: &SegmentRef<'a>) -> bool {
+        match (self, other) {
+            (Segment::Kana(k1), SegmentRef::Kana(k2)) => k1 == k2,
+            (Segment::Kanji(k1), SegmentRef::Kanji(k2)) => k1 == k2,
+            _ => false,
+        }
+    }
+}
+
+impl<'a> PartialEq<SegmentRef<'a>> for &'a Segment {
+    #[inline]
+    fn eq(&self, other: &SegmentRef<'a>) -> bool {
+        (*self).eq(other)
     }
 }

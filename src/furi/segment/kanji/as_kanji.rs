@@ -1,7 +1,6 @@
-use crate::{furigana::segment::encoder::FuriEncoder, reading::Reading};
-use itertools::Itertools;
-
 use super::KanjiRef;
+use crate::{furi::segment::encode::FuriEncoder, reading::Reading};
+use itertools::Itertools;
 
 /// Trait sharing behaivor of kanji segments.
 pub trait AsKanjiSegment {
@@ -13,7 +12,7 @@ pub trait AsKanjiSegment {
     /// Returns the readings for the literals.
     fn readings(&self) -> &[Self::StrType];
 
-    /// Returns the full kanji reading as `String`.
+    /// Returns the whole kana reading of the kanji.
     fn full_reading(&self) -> String {
         if self.reading_count() == 1 {
             return self.readings()[0].as_ref().to_string();

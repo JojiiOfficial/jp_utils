@@ -6,9 +6,11 @@ pub use r_ref::ReadingRef;
 use self::traits::AsReadingRef;
 
 #[cfg(feature = "furigana")]
-use crate::furigana::{parse::reading::FuriToReadingParser, Furigana};
+use crate::furi::segment::kanji::as_kanji::AsKanjiSegment;
 #[cfg(feature = "furigana")]
-use crate::furigana::{segment::AsSegment, segment::Segment, seq::FuriSequence};
+use crate::furi::{parse::reading::FuriToReadingParser, Furigana};
+#[cfg(feature = "furigana")]
+use crate::furi::{segment::AsSegment, segment::Segment, seq::FuriSequence};
 
 /// Represents a Japanese 'reading' which always consists of a kana reading and sometimes an
 /// equivalent way to write that word with kanji. This is an owned variant. For a borrowed variant
@@ -128,21 +130,20 @@ impl<S: AsSegment> FromIterator<S> for Reading {
 
         for i in iter {
             if let Some(k) = i.as_kanji() {
-                let k = k.as_ref();
                 if !has_kanji {
                     // lazy initialize kanji reading
                     kanji = kana.clone();
                     has_kanji = true;
                 }
 
-                let readings = i.readings().unwrap();
+                let readings = k.readings();
                 if readings.is_empty() || readings[0].as_ref().is_empty() {
-                    kana.push_str(k);
-                    kanji.push_str(k);
+                    kana.push_str(k.literals().as_ref());
+                    kanji.push_str(k.literals().as_ref());
                     continue;
                 }
 
-                kanji.push_str(k);
+                kanji.push_str(k.literals().as_ref());
                 for r in readings {
                     kana.push_str(r.as_ref());
                 }
@@ -166,8 +167,8 @@ where
 {
     #[inline]
     fn from(value: A) -> Self {
-        let kana = value.kana_reading();
-        let kanji = value.as_kanji().map(|i| i.as_ref().to_string());
+        let kana = value.get_kana_reading();
+        let kanji = value.as_kanji().map(|i| i.literals().as_ref().to_string());
         Self { kana, kanji }
     }
 }

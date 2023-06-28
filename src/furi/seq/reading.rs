@@ -1,5 +1,5 @@
 use super::FuriSequence;
-use crate::furigana::segment::AsSegment;
+use crate::furi::segment::AsSegment;
 
 /// A `reading` view over `FuriSequence` that targets a given reading (kanji or kana) of the
 /// furigana sequence
@@ -20,9 +20,9 @@ where
     /// Returns the length in bytes of string
     pub fn len(&self) -> usize {
         if self.kana {
-            self.r.iter().map(|i| i.kana_reading().len()).sum()
+            self.r.iter().map(|i| i.get_kana_reading().len()).sum()
         } else {
-            self.r.iter().map(|i| i.main_reading().len()).sum()
+            self.r.iter().map(|i| i.main_reading().as_ref().len()).sum()
         }
     }
 
@@ -36,12 +36,12 @@ where
         if self.kana {
             self.r
                 .iter()
-                .map(|i| i.kana_reading().chars().count())
+                .map(|i| i.get_kana_reading().chars().count())
                 .sum()
         } else {
             self.r
                 .iter()
-                .map(|i| i.main_reading().chars().count())
+                .map(|i| i.main_reading().as_ref().chars().count())
                 .sum()
         }
     }
@@ -53,9 +53,9 @@ where
 {
     fn to_string(&self) -> String {
         if self.kana {
-            self.r.iter().map(|i| i.kana_reading()).collect()
+            self.r.iter().map(|i| i.get_kana_reading()).collect()
         } else {
-            self.r.iter().map(|i| i.main_reading()).collect()
+            self.r.iter().map(|i| i.main_reading().as_ref()).collect()
         }
     }
 }
