@@ -29,6 +29,7 @@ default = ["furigana"]
 full = ["furigana","serde","hiragana"]
 hiragana = []
 furigana = ["itertools"]
+with_serde = ["tinyvec/serde","serde"]
 
 [[bench]]
 name = "my_bench"

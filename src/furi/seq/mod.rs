@@ -16,7 +16,7 @@ use std::{slice::Iter, str::FromStr};
 /// Sequence of parsed furigana segments. This type can be helpful if you access the inner parts a
 /// lot. Otherwise you should use [`crate::furigana::Furigana`] instead as its memory efficient and
 /// most operations are faster and without allocation.
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FuriSequence<T> {
     parts: Vec<T>,

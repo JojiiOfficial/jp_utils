@@ -1,12 +1,13 @@
-use std::str::FromStr;
-
 use super::{
     kanji::{as_kanji::AsKanjiRef, Kanji},
     s_ref::SegmentRef,
     traits::{AsSegment, AsSegmentRef},
 };
+use std::str::FromStr;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// A single segment of a Furigana formatted string. Either holds a Kana or Kanji part.
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
+#[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Segment {
     Kana(String),
     Kanji(Kanji),

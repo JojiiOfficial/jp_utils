@@ -1,7 +1,9 @@
 use super::{kanji::KanjiRef, traits::AsSegment, Segment};
 use tinyvec::TinyVec;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// A single segment of a Furigana formatted string. Either holds a Kana or Kanji part.
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
+#[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SegmentRef<'a> {
     Kana(&'a str),
     Kanji(KanjiRef<'a>),

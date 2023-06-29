@@ -1,8 +1,8 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use jp_utils::{
-    furigana::{
+    furi::{
         cformat::CodeFormatter, compare::FuriComparator, parse::FuriParser,
-        segment::encoder::FuriEncoder, seq::FuriSequence, Furigana,
+        segment::encode::FuriEncoder, seq::FuriSequence, Furigana,
     },
     reading::Reading,
 };

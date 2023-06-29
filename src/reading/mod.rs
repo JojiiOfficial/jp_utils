@@ -16,7 +16,7 @@ use crate::furi::{segment::AsSegment, segment::Segment, seq::FuriSequence};
 /// equivalent way to write that word with kanji. This is an owned variant. For a borrowed variant
 /// see [`ReadingRef`]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Reading {
     kana: String,
     kanji: Option<String>,

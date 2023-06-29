@@ -4,7 +4,8 @@ use super::{
 };
 use tinyvec::TinyVec;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
+#[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Kanji {
     lit: String,
     readings: TinyVec<[String; 1]>,

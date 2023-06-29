@@ -21,7 +21,7 @@ use self::{cformat::CodeFormatter, segment::encode::FuriEncoder, seq::FuriSequen
 /// a [`String`] or using the `new()` function which has the benefit that the furigana gets validated.
 /// Valid encoded furigana looks like this: `[拝金主義|はい|きん|しゅ|ぎ]は[問題|もん|だい]です。`
 #[derive(Clone, Copy, Hash, Default, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Furigana<T>(pub T);
 
 impl<T> Furigana<T>

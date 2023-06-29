@@ -5,7 +5,7 @@ use crate::furi::Furigana;
 
 /// A borrowed version of [`super::Reading`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "with_serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ReadingRef<'a> {
     kana: &'a str,
     kanji: Option<&'a str>,
