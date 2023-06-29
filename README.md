@@ -8,7 +8,7 @@ jp_utils = "0.1.4"
 
 # Examples
 ```rust
-use jp_utils::furigana::{segment::SegmentRef, Furigana}; // Feature: "furigana"
+use jp_utils::furi::{segment::SegmentRef, Furigana}; // Feature: "furigana"
 use jp_utils::hiragana::Syllable; // Feature: "hiragana"
 use jp_utils::JapaneseExt;
 use jp_utils::{alphabet::Alphabet, counter::is_counter};
@@ -39,10 +39,10 @@ assert_eq!(furigana.kana_str(), "にほんがすきです");
 let mut iter = furigana.segments(); // and even iterate over each part
 assert_eq!(
     iter.next(),
-    Some(SegmentRef::new_kanji_mult("日本", &["に", "ほん"]))
+    Some(SegmentRef::new_kanji("日本", &["に", "ほん"]))
 );
 assert_eq!(iter.next(), Some(SegmentRef::new_kana("が")));
-assert_eq!(iter.next(), Some(SegmentRef::new_kanji("好", "す")));
+assert_eq!(iter.next(), Some(SegmentRef::new_kanji("好",&["す"])));
 assert_eq!(iter.next(), Some(SegmentRef::new_kana("きです")));
 assert_eq!(iter.next(), None);
 
