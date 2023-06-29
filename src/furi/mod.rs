@@ -121,7 +121,6 @@ where
     /// Returns an iterator over all kanji segments.
     #[inline]
     pub fn kanji_segments(&self) -> impl Iterator<Item = SegmentRef> {
-        // FuriParser::new(self.raw()).unchecked()
         self.gen_parser()
             .filter(|i| i.1)
             .map(|i| UncheckedFuriParser::from_seg_str(i.0, i.1))
@@ -156,11 +155,9 @@ where
 
     #[inline]
     pub fn segment_range(&self, r: Range<usize>) -> impl Iterator<Item = SegmentRef> {
-        let start = r.start;
-        let len = r.len();
         self.gen_parser()
-            .skip(start)
-            .take(len)
+            .skip(r.start)
+            .take(r.len())
             .map(|i| UncheckedFuriParser::from_seg_str(i.0, i.1))
     }
 
