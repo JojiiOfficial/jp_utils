@@ -200,13 +200,6 @@ where
     }
 }
 
-impl<'a> From<&'a Furigana<&'a str>> for FuriSequence<SegmentRef<'a>> {
-    #[inline]
-    fn from(value: &'a Furigana<&'a str>) -> Self {
-        FuriSequence::parse_ref(value.raw()).unwrap()
-    }
-}
-
 impl<T: Default> Default for FuriSequence<T>
 where
     T: AsSegment,

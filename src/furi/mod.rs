@@ -1,3 +1,5 @@
+pub mod cformat;
+pub mod compare;
 pub mod parse;
 pub mod segment;
 pub mod seq;
@@ -13,7 +15,7 @@ use std::{
     ops::{Deref, Range},
 };
 
-use self::segment::encode::FuriEncoder;
+use self::{cformat::CodeFormatter, segment::encode::FuriEncoder, seq::FuriSequence};
 
 /// A struct that holds encoded furigana data in a string. Such an element can be created by directly wrapping around
 /// a [`String`] or using the `new()` function which has the benefit that the furigana gets validated.
@@ -102,11 +104,11 @@ where
         Reading::new_raw(kana, kanji)
     }
 
-    /* /// Converts the furigana to a `FuriSequence`.
+    /// Converts the furigana to a `FuriSequence`.
     #[inline]
     pub fn to_seq(&self) -> FuriSequence<SegmentRef> {
         self.into()
-    } */
+    }
 
     /// Returns an iterator over all kana segments.
     #[inline]
@@ -233,11 +235,11 @@ impl<T> Furigana<T> {
         Self(furi)
     }
 
-    /* /// Returns an object that can work on the format of the furigana object.
+    /// Returns an object that can work on the format of the furigana object.
     #[inline]
     pub fn code_formatter(&self) -> CodeFormatter<T> {
         CodeFormatter::new(self)
-    } */
+    }
 }
 
 impl Furigana<String> {
@@ -274,7 +276,7 @@ impl Furigana<String> {
     }
 }
 
-/* impl<T: AsSegment> From<FuriSequence<T>> for Furigana<String> {
+impl<T: AsSegment> From<FuriSequence<T>> for Furigana<String> {
     #[inline]
     fn from(value: FuriSequence<T>) -> Self {
         value.encode()
@@ -286,7 +288,7 @@ impl<'a, T: AsRef<str>> Into<FuriSequence<SegmentRef<'a>>> for &'a Furigana<T> {
     fn into(self) -> FuriSequence<SegmentRef<'a>> {
         FuriSequence::from(self.segments().to_vec())
     }
-} */
+}
 
 impl<T: AsRef<str>> From<T> for Furigana<T> {
     #[inline]
