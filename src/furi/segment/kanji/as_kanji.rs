@@ -1,5 +1,8 @@
 use super::KanjiRef;
-use crate::{furi::segment::encode::FuriEncoder, reading::Reading};
+use crate::{
+    furi::segment::{encode::FuriEncoder, iter::lit_readings::LitReadingsIter},
+    reading::Reading,
+};
 use itertools::Itertools;
 
 /// Trait sharing behaivor of kanji segments.
@@ -49,6 +52,15 @@ pub trait AsKanjiSegment {
     #[inline]
     fn reading_count(&self) -> usize {
         self.readings().len()
+    }
+
+    /// Returns an iterator over all kanji literal with its readings assigned.
+    #[inline]
+    fn literal_readings(&self) -> LitReadingsIter<Self>
+    where
+        Self: Sized,
+    {
+        LitReadingsIter::new(self)
     }
 
     /// Returns `true` if the kanji segment holds a single kanji with its reading.

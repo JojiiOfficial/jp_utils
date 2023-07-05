@@ -1,14 +1,18 @@
 pub mod flatten;
+pub mod lit_readings;
 
+use self::lit_readings::LitReadingsIter;
 use super::{kanji::as_kanji::AsKanjiSegment, AsSegment};
 use crate::reading::Reading;
-use std::str::Chars;
 
 /// Iterator over all readings of a `Segment`
-pub struct SegmentIter<'a, S> {
+pub struct SegmentIter<'a, S>
+where
+    S: AsSegment,
+{
     segment: &'a S,
-    pos: usize,
-    lit_iter: Option<Chars<'a>>,
+    did_kana: bool,
+    kanji_lits: Option<LitReadingsIter<'a, S::KanjiType>>,
 }
 
 impl<'a, S> SegmentIter<'a, S>
@@ -17,10 +21,12 @@ where
 {
     #[inline]
     pub(crate) fn new(segment: &'a S) -> Self {
+        let kanji_lits = segment.as_kanji().map(|i| i.literal_readings());
+
         Self {
             segment,
-            pos: 0,
-            lit_iter: None,
+            did_kana: false,
+            kanji_lits,
         }
     }
 }
@@ -34,37 +40,16 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         // Handle kana
         if let Some(kana) = self.segment.as_kana() {
-            if self.pos > 0 {
+            if self.did_kana {
                 return None;
             }
-            self.pos = 1;
+            self.did_kana = true;
             return Some(Reading::new(kana.as_ref().to_string()));
         }
 
         // We checked for kana before and always early return for kana segments.
-        let kanji = unsafe { self.segment.as_kanji().unwrap_unchecked() };
-
-        // Handle non detailed kanji
-        if !kanji.is_detailed() {
-            if self.pos > 0 {
-                return None;
-            }
-            self.pos = 1;
-            let kana = self.segment.get_kana_reading();
-            let kanji = kanji.literals().as_ref().to_string();
-            return Some(Reading::new_with_kanji(kana, kanji));
-        }
-
-        if self.lit_iter.is_none() {
-            self.lit_iter = Some(kanji.literals().as_ref().chars());
-        }
-
-        let lit = unsafe { self.lit_iter.as_mut().unwrap_unchecked() }.next()?;
-        let reading = kanji.readings()[self.pos].as_ref().to_string();
-
-        self.pos += 1;
-
-        Some(Reading::new_with_kanji(reading, lit.to_string()))
+        let (kanji, kana) = unsafe { self.kanji_lits.as_mut().unwrap_unchecked() }.next()?;
+        Some(Reading::new_with_kanji(kana, kanji))
     }
 }
 
