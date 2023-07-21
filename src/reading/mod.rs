@@ -67,6 +67,13 @@ impl Reading {
     pub fn kana(&self) -> &str {
         &self.kana
     }
+
+    /// Converts the reading to a `(String, Option<String>)` tuple where the first String is the
+    /// kana reading and the `Option<String>` the kanji reading if available.
+    #[inline]
+    pub fn into_inner(self) -> (String, Option<String>) {
+        (self.kana, self.kanji)
+    }
 }
 
 impl AsReadingRef for Reading {
