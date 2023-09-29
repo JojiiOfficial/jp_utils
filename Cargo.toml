@@ -4,7 +4,7 @@ name = "jp_utils"
 authors = ["jojii <jojii@gmx.net>"]
 keywords = ["japanese","languages","parse","charset"]
 categories = ["text-processing"]
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 repository = "https://github.com/JojiiOfficial/jp_utils"
 license = "AGPL-3.0"
@@ -14,8 +14,8 @@ readme = "README.md"
 
 [dependencies]
 itertools = {version = "0.11", optional = true}
-serde = { version = "1.0.166", default_features = false, features = ["derive", "std"], optional = true }
-tinyvec = { version = "1.6.0", default_features = false, features = ["alloc"] }
+serde = { version = "1.0", default_features = false, features = ["derive", "std"], optional = true }
+tinyvec = { version = "1.6", default_features = false, features = ["alloc"] }
 
 [dev-dependencies]
 test-case = "3.1.0"
